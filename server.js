@@ -19,6 +19,10 @@ dbConnect();
 // Router
 app.use("/api/auth", loginRouter);
 
+app.get("/", (req, res) => {
+  res.send("NestPay Backend Running 🚀");
+});
+
 // global Error handler
 app.use((err, req, res, next) => {
   const statusCode = err.status || 500;
