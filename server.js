@@ -20,7 +20,7 @@ dbConnect();
 app.use("/api/auth", loginRouter);
 
 app.get("/", (req, res) => {
-  res.send("NestPay Backend Running 🚀");
+  res.send("NestPay Backend Running successfully 🚀");
 });
 
 // global Error handler
