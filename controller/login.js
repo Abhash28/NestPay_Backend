@@ -60,37 +60,32 @@ const login = async (req, res, next) => {
         name: validUser.name,
         mobileNo: validUser.mobileNo,
       },
-      process.env.SECRET_KEY
+      process.env.SECRET_KEY,
+      {
+        expiresIn: "1d",
+      }
     );
 
-    // set cookies
-    res.cookie("accessCookie", token, { httpOnly: true }).status(200).json({
-      success: true,
-      message: "successfully login with sebding cookies to client",
-    });
+
+   res.status(200).json({
+  success: true,
+  message: "Login successfully ",
+  token, // JWT
+});
+
   } catch (error) {
     next(error);
   }
 };
 
-//logout
-const logout = async (req, res, next) => {
-  try {
-    res
-      .clearCookie("accessCookie")
-      .status(200)
-      .json({ success: true, message: "Logout Successfully" });
-  } catch (error) {
-    next(error);
-  }
-};
+
 //check user for change pass
 const checkUser = async (req, res, next) => {
   const { mobileNo } = req.body;
   try {
     const findUser = await SignupSchema.findOne({ mobileNo });
     if (!findUser) {
-      return next(createError(200, "User not found"));
+      return next(createError(404, "User not found"));
     }
     res.status(200).json({ success: true, message: "User Found" });
   } catch (error) {
@@ -119,4 +114,4 @@ const changePass = async (req, res, next) => {
     next(error);
   }
 };
-module.exports = { signup, login, logout, checkUser, changePass };
+module.exports = { signup, login,checkUser, changePass };
