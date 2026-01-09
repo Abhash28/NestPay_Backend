@@ -55,10 +55,32 @@ const fetchAllProperty = async (req, res, next) => {
   }
 };
 
+//fetch single property
+const getSingleProperty = async (req, res, next) => {
+  const { propertyId } = req.params;
+
+  try {
+    const property = await PropertiesSchema.findById(propertyId);
+
+    if (!property) {
+      return res.status(404).json({
+        success: false,
+        message: "Property not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      property,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 //fetch all units for detailed property
 const allUnit = async (req, res, next) => {
   const { propertyId } = req.params;
-
   try {
     const units = await unitSchema.find({ propertyId });
 
@@ -73,4 +95,15 @@ const allUnit = async (req, res, next) => {
   }
 };
 
-module.exports = { addProperty, fetchAllProperty, allUnit };
+//unit Allocation
+const unitAllocation = async (req, res, next) => {
+  res.json({ message: "Start" });
+};
+
+module.exports = {
+  addProperty,
+  fetchAllProperty,
+  getSingleProperty,
+  allUnit,
+  unitAllocation,
+};

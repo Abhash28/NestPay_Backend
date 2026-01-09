@@ -5,6 +5,7 @@ const dbConnect = require("./config/dbConnect");
 const { loginRouter } = require("./routers/loginRouter");
 const { propertyRouter } = require("./routers/PropertyRouter");
 const { tenantRoute } = require("./routers/TenantRouter");
+const { allocatUnitRouter } = require("./routers/AllocationRouter");
 
 //config dotenv file data
 dotenv.config();
@@ -24,6 +25,7 @@ dbConnect();
 app.use("/api/auth", loginRouter);
 app.use("/api/property", propertyRouter);
 app.use("/api/tenant", tenantRoute);
+app.use("/api/allocation", allocatUnitRouter);
 
 app.get("/", (req, res) => {
   res.send("NestPay Backend Running successfully 🚀");

@@ -1,15 +1,21 @@
 const mongoose = require("mongoose");
-const UnitAllocationSchema = new mongoose.Schema(
+const allocateUnitSchema = new mongoose.Schema(
   {
-    tenantId: {
+    propertyId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "tenant",
+      ref: "Properties",
       required: true,
     },
     unitId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "units",
     },
+    tenantId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "tenant",
+      required: true,
+    },
+
     startDate: {
       type: Date,
       default: Date.now, // tenant move-in date
@@ -22,4 +28,4 @@ const UnitAllocationSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model("UnitAllocation", UnitAllocationSchema);
+module.exports = mongoose.model("UnitAllocation", allocateUnitSchema);
