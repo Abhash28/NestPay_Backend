@@ -6,7 +6,7 @@ const addProperty = async (req, res, next) => {
   const { propertyName, propertyAddress, totalUnits, monthlyRent } = req.body;
   // if  field missing
   if (!propertyName || !propertyAddress || !totalUnits || !monthlyRent) {
-    return next(createError(401, "All Field Required"));
+    return next(createError(404, "All Field Required"));
   }
   // save property
   try {
@@ -33,6 +33,30 @@ const addProperty = async (req, res, next) => {
       success: true,
       message: "Property  & unit Save Successfully",
       Property,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+//update old property
+const updateProperty = async (req, res, next) => {
+  const { property } = req.body;
+  try {
+    const allowedUpdate = {
+      propertyName: property.propertyName,
+      propertyAddress: property.propertyAddress,
+      monthlyRent: property.monthlyRent,
+    };
+    const updatedProperty = await PropertiesSchema.findByIdAndUpdate(
+      property._id,
+      allowedUpdate,
+      { new: true }
+    );
+    res.status(200).json({
+      success: true,
+      message: "update successfully",
+      property: updatedProperty,
     });
   } catch (error) {
     next(error);
@@ -95,15 +119,10 @@ const allUnit = async (req, res, next) => {
   }
 };
 
-//unit Allocation
-const unitAllocation = async (req, res, next) => {
-  res.json({ message: "Start" });
-};
-
 module.exports = {
   addProperty,
+  updateProperty,
   fetchAllProperty,
   getSingleProperty,
   allUnit,
-  unitAllocation,
 };

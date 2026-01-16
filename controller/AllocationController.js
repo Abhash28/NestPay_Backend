@@ -6,6 +6,7 @@ const TenantSchema = require("../model/TenantSchema");
 // unit allocation controller
 const allocateUnit = async (req, res, next) => {
   const { propertyId, unitId, tenantId } = req.body;
+  const adminId = req.admin.id;
 
   if (!propertyId || !unitId || !tenantId) {
     return next(createError(400, "All fields are required"));
@@ -32,6 +33,13 @@ const allocateUnit = async (req, res, next) => {
       return next(createError(400, "Tenant already has a unit"));
     }
 
+    //Decide billing Date
+    let billingDay = new Date().getDate();
+    //normalize month date
+    if (billingDay > 28) {
+      billingDay = 1;
+    }
+
     // update unit
     unit.status = "occupied";
     unit.tenantId = tenantId;
@@ -43,9 +51,13 @@ const allocateUnit = async (req, res, next) => {
 
     // save allocation history
     const allocation = await allocateUnitSchema.create({
+      adminId,
       propertyId,
       unitId,
       tenantId,
+      rentAmount: unit.monthlyRent,
+      billingDay,
+      startDate: new Date(),
     });
 
     res.status(201).json({
@@ -58,4 +70,54 @@ const allocateUnit = async (req, res, next) => {
   }
 };
 
-module.exports = { allocateUnit };
+//Unit DeAllocation controller
+const deAllocateUnit = async (req, res, next) => {
+  const { tenantId } = req.params;
+  const { endDate, deactivateReason, deactivateRemark } = req.body;
+  try {
+    //Find tenants
+    const tenant = await TenantSchema.findById(tenantId);
+    if (!tenant) {
+      return next(createError(401, "Tenant not found"));
+    }
+    if (!tenant.unitId) {
+      return next(createError(401, "Tenant has no allocation "));
+    }
+    // find unit
+    const unit = await Units.findById(tenant.unitId);
+    if (!unit) {
+      return next(createError(404, "Unit not found"));
+    }
+
+    //update unit (vacant,tenantid= null)
+    unit.status = "vacant";
+    unit.tenantId = null;
+    await unit.save();
+
+    //update tenants and close record
+    tenant.unitId = null;
+    tenant.status = "Inactive";
+    tenant.endDate = endDate || new Date();
+    tenant.deactivateReason = deactivateReason || null;
+    tenant.deactivateRemark = deactivateRemark || null;
+    await tenant.save();
+
+    //close alocation card (schema)
+    await allocateUnitSchema.findOneAndUpdate(
+      {
+        tenantId,
+        unitId: unit._id,
+      },
+      {
+        status: "Inactive",
+        endDate: new Date(),
+      }
+    );
+    res
+      .status(200)
+      .json({ success: true, message: "Unit deAllocated Successfully" });
+  } catch (error) {
+    next(error);
+  }
+};
+module.exports = { allocateUnit, deAllocateUnit };

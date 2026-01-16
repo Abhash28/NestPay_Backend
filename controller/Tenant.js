@@ -1,5 +1,6 @@
 const createError = require("http-errors");
 const TenantSchema = require("../model/TenantSchema");
+//add new tenants
 const addTenant = async (req, res, next) => {
   const { tenantName, tenantMobileNo, tenantAddress } = req.body;
 
@@ -14,10 +15,30 @@ const addTenant = async (req, res, next) => {
       tenantMobileNo,
       tenantAddress,
       createdBy: req.admin.id,
+      startDate: new Date(),
     });
     res.status(200).json({
       sucess: true,
       message: "Tenants Data save Successfully",
+      tenant,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+//fetch single tenants by id for deactivation
+const getSingleTenant = async (req, res, next) => {
+  const { tenantId } = req.params;
+  try {
+    if (!tenantId) {
+      return next(createError(401, "Tenant not fetch"));
+    }
+    const tenant = await TenantSchema.findById(tenantId)
+      .populate("unitId")
+      .populate("createdBy");
+    res.status(201).json({
+      success: true,
+      message: "Single Tenant for tenant details",
       tenant,
     });
   } catch (error) {
@@ -42,4 +63,29 @@ const fetchAllTenant = async (req, res, next) => {
   }
 };
 
-module.exports = { addTenant, fetchAllTenant };
+//fetch all de-active tenants
+const inActiveTenant = async (req, res, next) => {
+  const { id } = req.admin;
+
+  try {
+    if (!id) {
+      return next(createError(401, "Unauthorized"));
+    }
+
+    const inactiveTenants = await TenantSchema.find({
+      createdBy: id, // only this admin's tenants
+      status: "Inactive", // only inactive
+    });
+
+    res.status(200).json({
+      success: true,
+      count: inactiveTenants.length,
+      message: "Inactive tenants fetched successfully",
+      tenants: inactiveTenants,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { addTenant, getSingleTenant, fetchAllTenant, inActiveTenant };

@@ -5,12 +5,14 @@ const {
   allUnit,
   unitAllocation,
   getSingleProperty,
+  updateProperty,
 } = require("../controller/Property");
 const { verifyAdmin } = require("../utils/verifyAdmin");
 
 const propertyRouter = express.Router();
 
 propertyRouter.post("/add-property", verifyAdmin, addProperty);
+propertyRouter.put("/update-property", verifyAdmin, updateProperty);
 propertyRouter.get(
   "/single-property/:propertyId",
   verifyAdmin,
@@ -19,10 +21,5 @@ propertyRouter.get(
 
 propertyRouter.get("/all-property", verifyAdmin, fetchAllProperty);
 propertyRouter.get("/all-units/:propertyId", verifyAdmin, allUnit);
-propertyRouter.post(
-  "/all-units/:propertyId/allocation",
-  verifyAdmin,
-  unitAllocation
-);
 
 module.exports = { propertyRouter };

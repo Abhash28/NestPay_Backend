@@ -1,11 +1,16 @@
 const mongoose = require("mongoose");
-const allocateUnitSchema = new mongoose.Schema(
+
+const RentDueSchema = new mongoose.Schema(
   {
     adminId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "adminSignup",
       required: true,
-      index: true,
+    },
+    allocationId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "UnitAllocation",
+      required: true,
     },
     propertyId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -15,42 +20,39 @@ const allocateUnitSchema = new mongoose.Schema(
     unitId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "units",
+      required: true,
     },
     tenantId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "tenant",
       required: true,
     },
-    rentAmount: {
+    month: {
       type: String,
-      default: null,
+      required: true, // "2026-01"
+    },
+    rentAmount: {
+      type: Number,
+      required: true,
+    },
+    dueDate: {
+      type: Date,
+      required: true,
     },
     status: {
       type: String,
-      enum: ["Active", "Inactive"],
-      default: "Active",
+      enum: ["Pending", "Paid", "Overdue"],
+      default: "Pending",
     },
-    //Billing Date
-    billingDay: {
+    paidAmount: {
       type: Number,
-      required: true,
-      min: 1,
-      max: 28,
+      default: 0,
     },
-    startDate: {
-      type: Date,
-      default: Date.now, // tenant move-in date
-    },
-    endDate: {
-      type: Date,
-      default: null,
-    },
-    lastRentGeneratedMonth: {
-      type: String,
-      default: null,
-    }, // "2026-01"
+    paidAt: Date,
   },
   { timestamps: true }
 );
 
-module.exports = mongoose.model("UnitAllocation", allocateUnitSchema);
+// SAFE EXPORT (prevents overwrite error)
+module.exports =
+  mongoose.models.RentDue || mongoose.model("RentDue", RentDueSchema);
