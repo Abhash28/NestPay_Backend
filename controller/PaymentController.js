@@ -1,5 +1,5 @@
 const crypto = require("crypto");
-const rentDueSchema = require("../model/RentDueSchema");
+const RentDueSchema = require("../model/RentDueSchema");
 const PaymentSchema = require("../model/PaymentSchema");
 const razorpay = require("../config/razorpayConfig");
 const createError = require("http-errors");
@@ -10,7 +10,7 @@ const createOrder = async (req, res, next) => {
   try {
     const { rentDueId } = req.body;
 
-    const rentDue = await rentDueSchema.findById(rentDueId);
+    const rentDue = await RentDueSchema.findById(rentDueId);
     //check rent availble or not
     if (!rentDue) {
       return next(createError(404, "Rent Due not found"));
