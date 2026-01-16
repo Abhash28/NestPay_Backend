@@ -1,4 +1,4 @@
-const RentDue = require("../model/rentDueSchema.js");
+const RentDue = require("../model/RentDueSchema");
 
 const updateOverdueRent = async () => {
   // Start of today (00:00:00 IST)

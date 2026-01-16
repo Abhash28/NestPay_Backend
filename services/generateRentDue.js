@@ -1,5 +1,5 @@
 const AllocateUnit = require("../model/allocateUnitSchema.js");
-const rentDueSchema = require("../model/rentDueSchema.js");
+const rentDueSchema = require("../model/RentDueSchema.js");
 
 // Helper: converts Date → "YYYY-MM"
 const formatMonth = (date) => date.toISOString().slice(0, 7);
