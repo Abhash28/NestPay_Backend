@@ -3,7 +3,7 @@ const { verifyAdmin } = require("../utils/verifyAdmin");
 const {
   createOrder,
   verifyPayment,
-} = require("../controller/paymentController");
+} = require("../controller/PaymentController");
 
 const paymentRouter = express.Router();
 
