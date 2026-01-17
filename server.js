@@ -1,5 +1,5 @@
-const express = require("express");
 require("dotenv").config();
+const express = require("express");
 const cors = require("cors");
 const rentDueCron = require("./cron/rentDue.cron");
 const dbConnect = require("./config/dbConnect");
@@ -16,6 +16,9 @@ const { paymentRouter } = require("./routers/PaymentRouter");
 const app = express();
 app.use(express.json());
 
+//razor pay config
+const razorpay = require("./config/razorpayConfig");
+const { UnitRouter } = require("./routers/UnitRouter");
 //Or restrict to your frontend origin
 app.use(cors({ origin: "http://localhost:5173", credentials: true })); //allow all cookies/auth headerss
 
@@ -25,10 +28,12 @@ dbConnect();
 // Router
 app.use("/api/auth", loginRouter);
 app.use("/api/property", propertyRouter);
+app.use("/api/unit", UnitRouter);
 app.use("/api/tenant", tenantRoute);
 app.use("/api/allocation", allocatUnitRouter);
 app.use("/api/rentDue", rentDueRouter);
 app.use("/api/payment", paymentRouter);
+console.log(process.env.RAZORPAY_KEY_ID);
 
 app.get("/", (req, res) => {
   res.send("NestPay Backend Running successfully 🚀");

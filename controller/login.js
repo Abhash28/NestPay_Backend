@@ -66,18 +66,15 @@ const login = async (req, res, next) => {
       }
     );
 
-
-   res.status(200).json({
-  success: true,
-  message: "Login successfully ",
-  token, // JWT
-});
-
+    res.status(200).json({
+      success: true,
+      message: "Login successfully ",
+      token, // JWT
+    });
   } catch (error) {
     next(error);
   }
 };
-
 
 //check user for change pass
 const checkUser = async (req, res, next) => {
@@ -114,4 +111,4 @@ const changePass = async (req, res, next) => {
     next(error);
   }
 };
-module.exports = { signup, login,checkUser, changePass };
+module.exports = { signup, login, checkUser, changePass };

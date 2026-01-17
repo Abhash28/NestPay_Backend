@@ -3,9 +3,9 @@ const PropertiesSchema = require("../model/PropertiesSchema");
 const unitSchema = require("../model/Units");
 //Add new Property
 const addProperty = async (req, res, next) => {
-  const { propertyName, propertyAddress, totalUnits, monthlyRent } = req.body;
+  const { propertyName, propertyAddress, monthlyRent } = req.body;
   // if  field missing
-  if (!propertyName || !propertyAddress || !totalUnits || !monthlyRent) {
+  if (!propertyName || !propertyAddress || !monthlyRent) {
     return next(createError(404, "All Field Required"));
   }
   // save property
@@ -13,13 +13,12 @@ const addProperty = async (req, res, next) => {
     const Property = await PropertiesSchema.create({
       propertyName,
       propertyAddress,
-      totalUnits,
       monthlyRent,
       createdBy: req.admin.id,
     });
 
     // create array for all units
-    const units = [];
+    /* const units = [];
     for (let i = 1; i <= totalUnits; i++) {
       units.push({
         propertyId: Property.id,
@@ -28,7 +27,7 @@ const addProperty = async (req, res, next) => {
       });
     }
     //save all units inside units schema
-    await unitSchema.insertMany(units);
+    await unitSchema.insertMany(units); */
     res.status(200).json({
       success: true,
       message: "Property  & unit Save Successfully",

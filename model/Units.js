@@ -6,8 +6,8 @@ const unitSchema = new mongoose.Schema(
       ref: "Properties",
       required: true,
     },
-    unitNumber: {
-      type: Number,
+    unitName: {
+      type: String,
       required: true,
     },
     monthlyRent: {

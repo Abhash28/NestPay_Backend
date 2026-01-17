@@ -102,7 +102,7 @@ const verifyPayment = async (req, res, next) => {
     await payment.save();
 
     // Update Rent Due
-    await rentDueSchema.findByIdAndUpdate(payment.rentDueId, {
+    await RentDueSchema.findByIdAndUpdate(payment.rentDueId, {
       status: "Paid",
       paidAmount: payment.amount,
       paidAt: new Date(),

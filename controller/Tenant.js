@@ -1,5 +1,6 @@
 const createError = require("http-errors");
 const TenantSchema = require("../model/TenantSchema");
+
 //add new tenants
 const addTenant = async (req, res, next) => {
   const { tenantName, tenantMobileNo, tenantAddress } = req.body;
@@ -26,6 +27,32 @@ const addTenant = async (req, res, next) => {
     next(error);
   }
 };
+
+//update tenant details
+const updateTenant = async (req, res, next) => {
+  const { tenant } = req.body;
+  try {
+    const allowedUpdate = {
+      tenantName: tenant.tenantName,
+      tenantMobileNo: tenant.tenantMobileNo,
+      tenantAddress: tenant.tenantAddress,
+    };
+
+    const update = await TenantSchema.findByIdAndUpdate(
+      tenant._id,
+      allowedUpdate,
+      { new: true }
+    );
+    res.status(200).json({
+      success: true,
+      message: "Tenant details Update successfully",
+      update,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 //fetch single tenants by id for deactivation
 const getSingleTenant = async (req, res, next) => {
   const { tenantId } = req.params;
@@ -88,4 +115,10 @@ const inActiveTenant = async (req, res, next) => {
   }
 };
 
-module.exports = { addTenant, getSingleTenant, fetchAllTenant, inActiveTenant };
+module.exports = {
+  addTenant,
+  updateTenant,
+  getSingleTenant,
+  fetchAllTenant,
+  inActiveTenant,
+};

@@ -3,7 +3,7 @@ const generateRentDue = require("../services/generateRentDue");
 
 // Runs every day at 12:01 AM
 cron.schedule(
-  "1 0 * * *",
+  "* * * * *",
   async () => {
     console.log("Rent Due Cron Started");
     try {
