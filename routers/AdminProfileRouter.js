@@ -3,7 +3,7 @@ const { verifyAdmin } = require("../utils/verifyAdmin");
 const {
   adminProfile,
   updateAdminProfile,
-} = require("../controller/adminProfileController");
+} = require("../controller/AdminProfileController");
 
 const adminProfileRouter = express.Router();
 
