@@ -18,7 +18,9 @@ app.use(express.json());
 const razorpay = require("./config/razorpayConfig");
 
 //Or restrict to your frontend origin
-app.use(cors({ origin: "http://localhost:5173", credentials: true })); //allow all cookies/auth headerss
+app.use(
+  cors({ origin: "https://nestpay-frontend.vercel.app", credentials: true }),
+); //allow all cookies/auth headerss
 
 // DB connect
 dbConnect();
