@@ -1,17 +1,27 @@
 const RentDueSchema = require("../model/RentDueSchema");
 
 const getAllRentDue = async (req, res, next) => {
-  const adminId = req.admin.id;
+  try {
+    const adminId = req.admin.id;
 
-  const rentDues = await RentDueSchema.find({ adminId })
-    .populate("tenantId")
-    .populate("propertyId")
-    .populate("unitId");
+    const today = new Date();
+    const currentMonth = today.toISOString().slice(0, 7); // "YYYY-MM"
 
-  res.json({
-    count: rentDues.length,
-    rentDues,
-  });
+    const rentDues = await RentDueSchema.find({
+      adminId,
+      month: currentMonth,
+    })
+      .populate("tenantId")
+      .populate("propertyId")
+      .populate("unitId");
+
+    res.json({
+      count: rentDues.length,
+      rentDues,
+    });
+  } catch (error) {
+    next(error);
+  }
 };
 
 //show all  rent for perticullar  tenant we filter according to use in history show only paid and in home page show only pending rent

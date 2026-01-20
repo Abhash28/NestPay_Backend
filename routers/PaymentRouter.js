@@ -7,6 +7,7 @@ const {
   recentPaid,
   paidRent,
   recentPaidTenant,
+  paymentHistory,
 } = require("../controller/PaymentController");
 
 const paymentRouter = express.Router();
@@ -18,6 +19,9 @@ paymentRouter.post("/cash", verifyAdmin, markCashPayment);
 
 //recent payment for admin dashboard stats
 paymentRouter.get("/recent-paid", verifyAdmin, recentPaid);
+
+//admin payment histroy
+paymentRouter.get("/history", verifyAdmin, paymentHistory);
 
 //recent payment for admin dashboard stats
 paymentRouter.get("/recent/tenant/paid", verifyAdmin, recentPaidTenant);

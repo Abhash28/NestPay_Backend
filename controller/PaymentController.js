@@ -148,6 +148,7 @@ const markCashPayment = async (req, res, next) => {
 
     // update rent due
     rentDue.status = "Paid";
+    rentDue.paidAmount = rentDue.rentAmount;
     rentDue.paidAt = new Date();
     await rentDue.save();
 
@@ -177,6 +178,38 @@ const recentPaid = async (req, res, next) => {
     next(error);
   }
 };
+
+// payment history admin side
+const paymentHistory = async (req, res, next) => {
+  try {
+    const adminId = req.admin.id;
+
+    //read query params
+    const { month, year, status } = req.query;
+    let filter = { adminId };
+
+    //  If month & year selected → add month filter
+    if (month && year) {
+      // example: "01" + "2026" → "2026-01"
+      filter.month = `${year}-${month}`;
+    }
+
+    //  If status selected → add status filter
+    if (status) {
+      filter.status = status; // Paid / Pending
+    }
+    //fetch rent history
+    const rentDue = await RentDueSchema.find(filter)
+      .populate("tenantId", "tenantName")
+      .populate("propertyId", "propertyName")
+      .populate("unitId", "unitName")
+      .sort({ createdAt: -1 });
+    res.status(200).json({ rentDue });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // recent payment for tenant dashboard home page to show last payment
 const recentPaidTenant = async (req, res, next) => {
   const { id } = req.tenant;
@@ -215,6 +248,7 @@ module.exports = {
   verifyPayment,
   markCashPayment,
   recentPaid,
+  paymentHistory,
   recentPaidTenant,
   paidRent,
 };
