@@ -9,16 +9,14 @@ const { tenantRoute } = require("./routers/TenantRouter");
 const { allocatUnitRouter } = require("./routers/AllocationRouter");
 const { rentDueRouter } = require("./routers/RentdueRouter");
 const { paymentRouter } = require("./routers/PaymentRouter");
-
-//config dotenv file data
-
-//for use express data or libarary
+const { UnitRouter } = require("./routers/UnitRouter");
+const { adminProfileRouter } = require("./routers/AdminProfileRouter");
 const app = express();
 app.use(express.json());
 
 //razor pay config
 const razorpay = require("./config/razorpayConfig");
-const { UnitRouter } = require("./routers/UnitRouter");
+
 //Or restrict to your frontend origin
 app.use(cors({ origin: "http://localhost:5173", credentials: true })); //allow all cookies/auth headerss
 
@@ -33,6 +31,7 @@ app.use("/api/tenant", tenantRoute);
 app.use("/api/allocation", allocatUnitRouter);
 app.use("/api/rentDue", rentDueRouter);
 app.use("/api/payment", paymentRouter);
+app.use("/api/admin", adminProfileRouter);
 console.log(process.env.RAZORPAY_KEY_ID);
 
 app.get("/", (req, res) => {

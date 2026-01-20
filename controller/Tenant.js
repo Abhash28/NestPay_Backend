@@ -1,13 +1,23 @@
 const createError = require("http-errors");
+const bcrypt = require("bcrypt");
 const TenantSchema = require("../model/TenantSchema");
-
-//add new tenants
+const TenantAuthSchema = require("../model/TenantAuthSchema");
+const allocateUnitSchema = require("../model/allocateUnitSchema");
+//---------Add New Tenant---------
 const addTenant = async (req, res, next) => {
   const { tenantName, tenantMobileNo, tenantAddress } = req.body;
 
   // if any Data missing
   if (!tenantName || !tenantMobileNo || !tenantAddress) {
     return next(createError(401, "All Field Required"));
+  }
+
+  // prevent duplicate tenant login
+  const existingAuth = await TenantAuthSchema.findOne({
+    mobileNo: tenantMobileNo,
+  });
+  if (existingAuth) {
+    return next(createError(409, "Tenant login Already Exists"));
   }
   // save tenant
   try {
@@ -18,10 +28,29 @@ const addTenant = async (req, res, next) => {
       createdBy: req.admin.id,
       startDate: new Date(),
     });
+
+    //generate SIMPLE random password
+    const plainPassword = Math.random().toString(36).slice(-8);
+    //hash password
+    const hashPass = await bcrypt.hash(plainPassword, 10);
+
+    //create login
+    await TenantAuthSchema.create({
+      tenantId: tenant._id,
+      mobileNo: tenantMobileNo,
+      password: hashPass,
+      role: "tenant",
+    });
+
+    //response
     res.status(200).json({
       sucess: true,
       message: "Tenants Data save Successfully",
       tenant,
+      loginCredentials: {
+        mobileNo: tenantMobileNo,
+        password: plainPassword,
+      },
     });
   } catch (error) {
     next(error);
@@ -41,7 +70,7 @@ const updateTenant = async (req, res, next) => {
     const update = await TenantSchema.findByIdAndUpdate(
       tenant._id,
       allowedUpdate,
-      { new: true }
+      { new: true },
     );
     res.status(200).json({
       success: true,
@@ -53,32 +82,16 @@ const updateTenant = async (req, res, next) => {
   }
 };
 
-//fetch single tenants by id for deactivation
-const getSingleTenant = async (req, res, next) => {
-  const { tenantId } = req.params;
-  try {
-    if (!tenantId) {
-      return next(createError(401, "Tenant not fetch"));
-    }
-    const tenant = await TenantSchema.findById(tenantId)
-      .populate("unitId")
-      .populate("createdBy");
-    res.status(201).json({
-      success: true,
-      message: "Single Tenant for tenant details",
-      tenant,
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
 //fetch all tenants
 const fetchAllTenant = async (req, res, next) => {
   try {
     const tenants = await TenantSchema.find({
       createdBy: req.admin.id,
-    }).sort({ createdBy: -1 });
+    }).populate({
+      path: "unitId",
+      select: "unitName propertyId",
+      populate: { path: "propertyId", select: "propertyName" },
+    });
 
     res.status(200).json({
       success: true,
@@ -90,35 +103,31 @@ const fetchAllTenant = async (req, res, next) => {
   }
 };
 
-//fetch all de-active tenants
-const inActiveTenant = async (req, res, next) => {
+//-----Fetch Tenant by Tenant login for display in tenant side
+const fetchTenant = async (req, res, next) => {
   const { id } = req.admin;
-
   try {
-    if (!id) {
-      return next(createError(401, "Unauthorized"));
-    }
-
-    const inactiveTenants = await TenantSchema.find({
-      createdBy: id, // only this admin's tenants
-      status: "Inactive", // only inactive
-    });
-
-    res.status(200).json({
-      success: true,
-      count: inactiveTenants.length,
-      message: "Inactive tenants fetched successfully",
-      tenants: inactiveTenants,
-    });
+    const tenant = await TenantSchema.findById(id);
+    res.status(200).json({ tenant });
   } catch (error) {
     next(error);
   }
 };
 
+//fetch profile detail for tenant side show in profile
+const tenantProfile = async (req, res, next) => {
+  const { id } = req.tenant;
+  try {
+    const profile = await TenantSchema.findById(id);
+    res.json({ profile });
+  } catch (error) {
+    next(error);
+  }
+};
 module.exports = {
   addTenant,
   updateTenant,
-  getSingleTenant,
   fetchAllTenant,
-  inActiveTenant,
+  fetchTenant,
+  tenantProfile,
 };

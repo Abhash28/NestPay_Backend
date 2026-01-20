@@ -21,12 +21,12 @@ const unitSchema = new mongoose.Schema(
     },
     tenantId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Tenants",
+      ref: "tenant",
       default: null,
     },
   },
   {
     timestamps: true,
-  }
+  },
 );
 module.exports = mongoose.model("units", unitSchema);

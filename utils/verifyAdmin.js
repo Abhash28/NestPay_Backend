@@ -2,21 +2,20 @@ const jwt = require("jsonwebtoken");
 const createError = require("http-errors");
 
 const verifyAdmin = (req, res, next) => {
-  try {
-    const authHeader = req.headers.authorization;
+  const token = req.headers.authorization?.split(" ")[1];
+  if (!token) return next(createError(401, "Token missing"));
 
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return next(createError(401, "You are not authenticated"));
+  jwt.verify(token, process.env.SECRET_KEY, (err, decoded) => {
+    if (err) return next(createError(403, "Invalid token"));
+
+    if (decoded.role === "admin") {
+      req.admin = { id: decoded.id };
+    } else if (decoded.role === "tenant") {
+      req.tenant = { id: decoded.id };
     }
 
-    const token = authHeader.split(" ")[1];
-    const decoded = jwt.verify(token, process.env.SECRET_KEY);
-
-    req.admin = decoded;
     next();
-  } catch (err) {
-    next(createError(401, "Invalid or expired token"));
-  }
+  });
 };
 
-module.exports = {verifyAdmin};
+module.exports = { verifyAdmin };

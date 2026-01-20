@@ -1,6 +1,8 @@
 const createError = require("http-errors");
 const PropertiesSchema = require("../model/PropertiesSchema");
 const unitSchema = require("../model/Units");
+const TenantSchema = require("../model/TenantSchema");
+const rentDueSchema = require("../model/RentDueSchema");
 //Add new Property
 const addProperty = async (req, res, next) => {
   const { propertyName, propertyAddress, monthlyRent } = req.body;
@@ -50,7 +52,7 @@ const updateProperty = async (req, res, next) => {
     const updatedProperty = await PropertiesSchema.findByIdAndUpdate(
       property._id,
       allowedUpdate,
-      { new: true }
+      { new: true },
     );
     res.status(200).json({
       success: true,
@@ -67,9 +69,10 @@ const fetchAllProperty = async (req, res, next) => {
   const { id } = req.admin;
   try {
     const allProperty = await PropertiesSchema.find({ createdBy: id });
+
     res.status(200).json({
       success: true,
-      count: allProperty.length,
+      countProperty: allProperty.length,
       message: "Fetching all Property",
       allProperty,
     });
@@ -105,7 +108,9 @@ const getSingleProperty = async (req, res, next) => {
 const allUnit = async (req, res, next) => {
   const { propertyId } = req.params;
   try {
-    const units = await unitSchema.find({ propertyId });
+    const units = await unitSchema
+      .find({ propertyId })
+      .populate("tenantId", "tenantName tenantMobileNo");
 
     res.status(200).json({
       success: true,
@@ -118,10 +123,45 @@ const allUnit = async (req, res, next) => {
   }
 };
 
+//for admin dashboard fetch all property + all unit +all tenant + total rent due for this month
+
+const dashboardStats = async (req, res, next) => {
+  try {
+    const adminId = req.admin.id;
+
+    // run all queries together (fast)
+    const [totalProperty, totalUnit, totalActiveTenant] = await Promise.all([
+      // total properties
+      PropertiesSchema.countDocuments({ createdBy: adminId }),
+
+      // total units
+      unitSchema.countDocuments({}),
+
+      // total active tenants
+      TenantSchema.countDocuments({
+        createdBy: adminId,
+        status: "Active",
+      }),
+    ]);
+
+    res.status(200).json({
+      success: true,
+      stats: {
+        totalProperty,
+        totalUnit,
+        totalActiveTenant,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   addProperty,
   updateProperty,
   fetchAllProperty,
   getSingleProperty,
   allUnit,
+  dashboardStats,
 };

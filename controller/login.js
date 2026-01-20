@@ -2,32 +2,49 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const createError = require("http-errors"); // createError is not a build in function in node js while we in import from http-error
 const SignupSchema = require("../model/SignupSchema");
+const TenantAuthSchema = require("../model/TenantAuthSchema");
+const adminProfileSchema = require("../model/AdminProfileSchema");
 
 //signup request
+// signup request
 const signup = async (req, res, next) => {
-  const { name, mobileNo, password } = req.body;
-  //valodation
-  if (!name || !mobileNo || !password) {
-    return next(createError(400, "All Field Required"));
-  }
-  //check if obile no already prasent
-  const duplicateUser = await SignupSchema.findOne({ mobileNo });
-  if (duplicateUser) {
-    return next(createError(401, "Mobile No Already Prasent"));
-  }
-  //convert password to hased
-  const hasedPass = await bcrypt.hash(password, 10);
-
   try {
-    // save user
-    const response = await SignupSchema.create({
+    const { name, mobileNo, password } = req.body;
+
+    // validation
+    if (!name || !mobileNo || !password) {
+      return next(createError(400, "All fields are required"));
+    }
+
+    // check if mobile already exists
+    const duplicateUser = await SignupSchema.findOne({ mobileNo });
+    if (duplicateUser) {
+      return next(createError(409, "Mobile number already present"));
+    }
+
+    // hash password
+    const hashedPass = await bcrypt.hash(password, 10);
+
+    // create admin signup (AUTH)
+    const admin = await SignupSchema.create({
       name,
       mobileNo,
-      password: hasedPass,
+      password: hashedPass,
+      role: "admin",
     });
-    res
-      .status(201)
-      .json({ success: true, message: "Signup Sucessfully", response });
+
+    // create admin profile (PROFILE)
+    await adminProfileSchema.create({
+      adminId: admin._id,
+      name: admin.name,
+      mobileNo: admin.mobileNo,
+    });
+
+    res.status(201).json({
+      success: true,
+      message: "Signup successfully",
+      adminId: admin._id,
+    });
   } catch (error) {
     next(error);
   }
@@ -36,40 +53,59 @@ const signup = async (req, res, next) => {
 //login
 const login = async (req, res, next) => {
   const { mobileNo, password } = req.body;
-  //validation
+
   if (!mobileNo || !password) {
-    return next(createError(400, "All Field require while login"));
+    return next(createError(400, "All fields are required"));
   }
 
   try {
-    //find user by mobile no for login
-    const validUser = await SignupSchema.findOne({ mobileNo });
-    if (!validUser) {
-      return next(createError(404, "User not found "));
+    let user = await SignupSchema.findOne({ mobileNo });
+    let role;
+    let businessId;
+
+    if (user) {
+      role = "admin";
+      businessId = user._id;
+    } else {
+      user = await TenantAuthSchema.findOne({ mobileNo }).populate(
+        "tenantId",
+        "status",
+      );
+      if (!user) {
+        return next(createError(404, "User not found"));
+      }
+
+      //  BLOCK INACTIVE TENANT
+      if (user.tenantId.status !== "Active") {
+        return next(
+          createError(403, "Your account is inactive. Please contact admin"),
+        );
+      }
+
+      role = "tenant";
+      businessId = user.tenantId._id;
     }
 
-    //verify password
-    const isPassMatch = await bcrypt.compare(password, validUser.password);
+    const isPassMatch = await bcrypt.compare(password, user.password);
     if (!isPassMatch) {
       return next(createError(401, "Invalid credentials"));
     }
-    //token
+
     const token = jwt.sign(
       {
-        id: validUser._id,
-        name: validUser.name,
-        mobileNo: validUser.mobileNo,
+        id: businessId,
+        role,
+        mobileNo: user.mobileNo,
       },
       process.env.SECRET_KEY,
-      {
-        expiresIn: "1d",
-      }
+      { expiresIn: "1d" },
     );
 
     res.status(200).json({
       success: true,
-      message: "Login successfully ",
-      token, // JWT
+      message: "Login successfully",
+      token,
+      role,
     });
   } catch (error) {
     next(error);
@@ -79,36 +115,68 @@ const login = async (req, res, next) => {
 //check user for change pass
 const checkUser = async (req, res, next) => {
   const { mobileNo } = req.body;
+
   try {
-    const findUser = await SignupSchema.findOne({ mobileNo });
-    if (!findUser) {
-      return next(createError(404, "User not found"));
+    // Check Admin
+    let user = await SignupSchema.findOne({ mobileNo });
+    if (user) {
+      return res.status(200).json({
+        success: true,
+        message: "User Found",
+        role: "admin",
+      });
     }
-    res.status(200).json({ success: true, message: "User Found" });
+
+    // Check Tenant
+    user = await TenantAuthSchema.findOne({ mobileNo });
+    if (user) {
+      return res.status(200).json({
+        success: true,
+        message: "User Found",
+        role: "tenant",
+      });
+    }
+
+    // 3️⃣ Not found in both
+    return next(createError(404, "User not found"));
   } catch (error) {
     next(error);
   }
 };
 //change password
+
 const changePass = async (req, res, next) => {
   const { mobileNo, password } = req.body;
+
   try {
-    const findUser = await SignupSchema.findOne({ mobileNo });
-    //validation
-    if (!findUser) {
-      return next(createError(200, "User not found"));
+    let user = await SignupSchema.findOne({ mobileNo });
+    let role = "admin";
+
+    // If not admin, check tenant
+    if (!user) {
+      user = await TenantAuthSchema.findOne({ mobileNo });
+      role = "tenant";
     }
-    //convert password to hased pass
-    const hasedPass = await bcrypt.hash(password, 10);
-    // change old pass to new
-    findUser.password = hasedPass;
-    await findUser.save();
-    //return res to frontend
-    res
-      .status(200)
-      .json({ success: true, message: "Password update successfully" });
+
+    if (!user) {
+      return next(createError(404, "User not found"));
+    }
+
+    // Hash new password
+    const hashedPass = await bcrypt.hash(password, 10);
+
+    // Update password
+    user.password = hashedPass;
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Password updated successfully",
+      role,
+    });
   } catch (error) {
     next(error);
   }
 };
+
 module.exports = { signup, login, checkUser, changePass };

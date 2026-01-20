@@ -13,6 +13,9 @@ const ProeprtiesSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
+    totalUnit: {
+      type: Number,
+    },
     //admin schema ref
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
@@ -22,6 +25,6 @@ const ProeprtiesSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 module.exports = mongoose.model("Properties", ProeprtiesSchema);

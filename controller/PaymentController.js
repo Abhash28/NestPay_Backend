@@ -63,6 +63,7 @@ const createOrder = async (req, res, next) => {
   }
 };
 
+//verify payment
 const verifyPayment = async (req, res, next) => {
   try {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } =
@@ -117,4 +118,103 @@ const verifyPayment = async (req, res, next) => {
   }
 };
 
-module.exports = { createOrder, verifyPayment };
+//if admin mark cash then direct create order for cash
+const markCashPayment = async (req, res, next) => {
+  try {
+    const { rentDueId } = req.body;
+    const adminId = req.admin.id;
+
+    const rentDue = await RentDueSchema.findById(rentDueId);
+    if (!rentDue) {
+      return res.status(404).json({ message: "Rent due not found" });
+    }
+
+    if (rentDue.status === "Paid") {
+      return res.status(400).json({ message: "Rent already paid" });
+    }
+
+    // create payment record
+    await PaymentSchema.create({
+      adminId,
+      rentDueId,
+      tenantId: rentDue.tenantId,
+      propertyId: rentDue.propertyId,
+      unitId: rentDue.unitId,
+      amount: rentDue.rentAmount,
+      method: "CASH",
+      status: "SUCCESS",
+      paidAt: new Date(),
+    });
+
+    // update rent due
+    rentDue.status = "Paid";
+    rentDue.paidAt = new Date();
+    await rentDue.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Cash payment marked successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+//fetch recent payment for admin dashboard stats
+const recentPaid = async (req, res, next) => {
+  const { id } = req.admin;
+  try {
+    const recentPayment = await PaymentSchema.find({
+      adminId: id,
+      status: "SUCCESS",
+    })
+      .sort({ createdAt: -1 }) // latest first
+      .limit(3)
+      .populate("tenantId", "tenantName")
+      .populate("unitId", "unitName");
+    res.json({ recentPayment });
+  } catch (error) {
+    next(error);
+  }
+};
+// recent payment for tenant dashboard home page to show last payment
+const recentPaidTenant = async (req, res, next) => {
+  const { id } = req.tenant;
+  try {
+    const recentPayment = await PaymentSchema.find({
+      tenantId: id,
+      status: "SUCCESS",
+    })
+      .sort({ createdAt: -1 }) // latest first
+      .limit(2)
+      .populate("rentDueId", "month dueDate")
+      .populate("tenantId", "tenantName")
+      .populate("unitId", "unitName");
+    res.json({ recentPayment });
+  } catch (error) {
+    next(error);
+  }
+};
+
+//fetch all paid or success payment for tenant history
+const paidRent = async (req, res, next) => {
+  const { id } = req.tenant;
+  try {
+    const paymentHistory = await PaymentSchema.find({
+      tenantId: id,
+      status: "SUCCESS",
+    }).populate("rentDueId", "month dueDate");
+    res.json({ paymentHistory });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = {
+  createOrder,
+  verifyPayment,
+  markCashPayment,
+  recentPaid,
+  recentPaidTenant,
+  paidRent,
+};

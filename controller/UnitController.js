@@ -1,3 +1,4 @@
+const PropertiesSchema = require("../model/PropertiesSchema");
 const Units = require("../model/Units");
 const createError = require("http-errors"); // if you are using this
 
@@ -16,6 +17,12 @@ const createUnit = async (req, res, next) => {
       unitName,
       monthlyRent,
     });
+    //Count total unit and update in property section where how many unit have in this property
+    await PropertiesSchema.findByIdAndUpdate(
+      propertyId,
+      { $inc: { totalUnit: 1 } },
+      { new: true },
+    );
 
     res.status(201).json({
       success: true,
@@ -37,7 +44,7 @@ const updateUnit = async (req, res, next) => {
     const update = await Units.findByIdAndUpdate(
       unitId,
       { unitName, monthlyRent },
-      { new: true }
+      { new: true },
     );
     res
       .status(200)

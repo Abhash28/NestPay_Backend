@@ -15,7 +15,7 @@ const paymentSchema = new mongoose.Schema(
     },
     tenantId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Tenant",
+      ref: "tenant",
       required: true,
       index: true,
     },
@@ -28,7 +28,7 @@ const paymentSchema = new mongoose.Schema(
 
     unitId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Units",
+      ref: "units",
       required: true,
     },
     //razorPay
@@ -41,7 +41,7 @@ const paymentSchema = new mongoose.Schema(
     },
     method: {
       type: String,
-      enum: ["UPI", "CARD", "NETBANKING", "WALLET"],
+      enum: ["UPI", "CARD", "NETBANKING", "WALLET", "CASH"],
     },
     status: {
       type: String,
@@ -52,6 +52,6 @@ const paymentSchema = new mongoose.Schema(
     paidAt: Date,
     failureReason: String,
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 module.exports = mongoose.model("payment", paymentSchema);

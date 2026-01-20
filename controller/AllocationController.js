@@ -111,7 +111,7 @@ const deAllocateUnit = async (req, res, next) => {
       {
         status: "Inactive",
         endDate: new Date(),
-      }
+      },
     );
     res
       .status(200)
@@ -120,4 +120,47 @@ const deAllocateUnit = async (req, res, next) => {
     next(error);
   }
 };
-module.exports = { allocateUnit, deAllocateUnit };
+
+//fetch single tenants by id for deactivation and show detail info about tenant and there alloted property unit
+
+const tenantInfo = async (req, res, next) => {
+  const { tenantId } = req.params;
+
+  try {
+    if (!tenantId) {
+      return next(createError(400, "Tenant id required"));
+    }
+
+    const allocation = await allocateUnitSchema
+      .findOne({ tenantId })
+      .populate("tenantId")
+      .populate("unitId")
+      .populate("propertyId")
+      .populate("adminId");
+
+    if (!allocation) {
+      return next(createError(404, "No active allocation found"));
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Tenant + Unit + Allocation details",
+      allocation,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+//fetch detail for tenant side show the detail {property name ,address,unit ,rent} allocation schema store all info
+const tenantHome = async (req, res, next) => {
+  const { id } = req.tenant;
+  const tenantInfo = await allocateUnitSchema
+    .findOne({ tenantId: id })
+    .populate("adminId", "name mobileNo")
+    .populate("propertyId", "propertyName propertyAddress")
+    .populate("unitId", "unitName");
+  res.json({ tenantInfo });
+};
+
+module.exports = { allocateUnit, deAllocateUnit, tenantInfo, tenantHome };
