@@ -4,14 +4,14 @@ const updateOverdueRent = require("../services/rentOverDue");
 
 // Generate rent (daily)
 cron.schedule(
-  "* * * * *", // 12:01 AM IST
+  "1 0 * * *", // 12:01 AM IST
   generateRentDue,
   { timezone: "Asia/Kolkata" },
 );
 
 // Mark overdue (daily)
 cron.schedule(
-  "* * * * *", // 12:05 AM IST
+  "5 0 * * *", // 12:05 AM IST
   updateOverdueRent,
   { timezone: "Asia/Kolkata" },
 );
