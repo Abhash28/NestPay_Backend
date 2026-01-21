@@ -57,5 +57,5 @@ It handles **authentication, property management, tenant allocation, rent genera
 
 ---
 
-## 🗂️ Folder Structure
+
 
