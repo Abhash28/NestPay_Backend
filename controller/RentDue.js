@@ -13,7 +13,8 @@ const getAllRentDue = async (req, res, next) => {
     })
       .populate("tenantId")
       .populate("propertyId")
-      .populate("unitId");
+      .populate("unitId")
+      .sort({ createdAt: -1 });
 
     res.json({
       count: rentDues.length,

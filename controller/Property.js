@@ -135,7 +135,7 @@ const dashboardStats = async (req, res, next) => {
       PropertiesSchema.countDocuments({ createdBy: adminId }),
 
       // total units
-      unitSchema.countDocuments({}),
+      unitSchema.countDocuments({ adminId: adminId }),
 
       // total active tenants
       TenantSchema.countDocuments({

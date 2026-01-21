@@ -1,18 +1,18 @@
 const RentDue = require("../model/RentDueSchema");
 
 const updateOverdueRent = async () => {
-  // Start of today (00:00:00 IST)
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const endOfYesterday = new Date();
+  endOfYesterday.setHours(0, 0, 0, 0);
+  endOfYesterday.setMilliseconds(-1); // 23:59:59.999 of yesterday
 
   const result = await RentDue.updateMany(
     {
       status: "Pending",
-      dueDate: { $lt: today },
+      dueDate: { $lte: endOfYesterday },
     },
     {
       $set: { status: "Overdue" },
-    }
+    },
   );
 
   console.log(`Marked ${result.modifiedCount} rent(s) as overdue`);

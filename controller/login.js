@@ -6,7 +6,6 @@ const TenantAuthSchema = require("../model/TenantAuthSchema");
 const adminProfileSchema = require("../model/AdminProfileSchema");
 
 //signup request
-// signup request
 const signup = async (req, res, next) => {
   try {
     const { name, mobileNo, password } = req.body;
@@ -32,18 +31,20 @@ const signup = async (req, res, next) => {
       password: hashedPass,
       role: "admin",
     });
+    console.log("Admin created ");
 
     // create admin profile (PROFILE)
-    await adminProfileSchema.create({
+    const profile = await adminProfileSchema.create({
       adminId: admin._id,
       name: admin.name,
       mobileNo: admin.mobileNo,
     });
-
+    console.log("ADMIN PROFILE CREATED");
     res.status(201).json({
       success: true,
       message: "Signup successfully",
       adminId: admin._id,
+      profile,
     });
   } catch (error) {
     next(error);

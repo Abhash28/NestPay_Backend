@@ -72,6 +72,20 @@ const updateTenant = async (req, res, next) => {
       allowedUpdate,
       { new: true },
     );
+
+    if (!update) {
+      return res.status(404).json({
+        success: false,
+        message: "Tenant not found",
+      });
+    }
+
+    //if user update mobile no then also update in tenant auth schema for login
+    await TenantAuthSchema.findOneAndUpdate(
+      { tenantId: tenant._id },
+      { mobileNo: tenant.tenantMobileNo },
+    );
+
     res.status(200).json({
       success: true,
       message: "Tenant details Update successfully",

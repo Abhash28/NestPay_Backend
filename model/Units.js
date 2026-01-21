@@ -1,6 +1,12 @@
 const mongoose = require("mongoose");
 const unitSchema = new mongoose.Schema(
   {
+    adminId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "adminSignup",
+      required: true,
+    },
+
     propertyId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Properties",

@@ -41,6 +41,9 @@ const generateRentDue = async () => {
       today.getFullYear(),
       today.getMonth(),
       alloc.billingDay,
+      12,
+      0,
+      0,
     );
 
     //  STEP 5: Create RentDue document

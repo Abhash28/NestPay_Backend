@@ -1,19 +1,17 @@
 const cron = require("node-cron");
 const generateRentDue = require("../services/generateRentDue");
+const updateOverdueRent = require("../services/rentOverDue");
 
-// Runs every day at 12:01 AM
+// Generate rent (daily)
 cron.schedule(
-  "* * * * *",
-  async () => {
-    console.log("Rent Due Cron Started");
-    try {
-      await generateRentDue();
-      console.log(" Rent Due Generation Completed");
-    } catch (error) {
-      console.error("Rent Due Cron Failed", error);
-    }
-  },
-  {
-    timezone: "Asia/Kolkata",
-  },
+  "* * * * *", // 12:01 AM IST
+  generateRentDue,
+  { timezone: "Asia/Kolkata" },
+);
+
+// Mark overdue (daily)
+cron.schedule(
+  "* * * * *", // 12:05 AM IST
+  updateOverdueRent,
+  { timezone: "Asia/Kolkata" },
 );

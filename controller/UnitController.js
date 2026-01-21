@@ -4,6 +4,7 @@ const createError = require("http-errors"); // if you are using this
 
 //create new unit
 const createUnit = async (req, res, next) => {
+  const { adminid } = req.admin;
   try {
     const { propertyId, unitName, monthlyRent } = req.body;
 
@@ -13,6 +14,7 @@ const createUnit = async (req, res, next) => {
     }
 
     const unit = await Units.create({
+      adminId: req.admin.id,
       propertyId,
       unitName,
       monthlyRent,

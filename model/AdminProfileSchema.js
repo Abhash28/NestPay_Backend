@@ -8,6 +8,12 @@ const adminProfileSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
+    name: {
+      type: String,
+    },
+    mobileNo: {
+      type: String,
+    },
 
     address: {
       type: String,
