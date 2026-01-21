@@ -11,27 +11,42 @@ const { rentDueRouter } = require("./routers/RentdueRouter");
 const { paymentRouter } = require("./routers/PaymentRouter");
 const { UnitRouter } = require("./routers/UnitRouter");
 const { adminProfileRouter } = require("./routers/AdminProfileRouter");
+
 const app = express();
+
+/* 🔥 REQUIRED FOR RENDER */
+app.set("trust proxy", 1);
+
+/* 🔥 BODY PARSERS */
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-//razor pay config
-const razorpay = require("./config/razorpayConfig");
-
-//Or restrict to your frontend origin
+/* 🔥 FINAL CORS CONFIG */
 const allowedOrigins = ["https://nest-pay.in", "http://localhost:5173"];
 
 app.use(
   cors({
-    origin: allowedOrigins,
+    origin: function (origin, callback) {
+      // allow REST tools, server-to-server, and same-origin
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   }),
 );
-//allow all cookies/auth headerss
 
-// DB connect
+/* 🔥 HANDLE PREFLIGHT */
+app.options("*", cors());
+
+/* DB CONNECT */
 dbConnect();
 
-// Router
+/* ROUTES */
 app.use("/api/auth", loginRouter);
 app.use("/api/property", propertyRouter);
 app.use("/api/unit", UnitRouter);
@@ -40,19 +55,24 @@ app.use("/api/allocation", allocatUnitRouter);
 app.use("/api/rentDue", rentDueRouter);
 app.use("/api/payment", paymentRouter);
 app.use("/api/admin", adminProfileRouter);
-console.log(process.env.RAZORPAY_KEY_ID);
 
+/* HEALTH CHECK */
 app.get("/", (req, res) => {
   res.send("NestPay Backend Running successfully 🚀");
 });
 
-// global Error handler
+/* GLOBAL ERROR HANDLER */
 app.use((err, req, res, next) => {
   const statusCode = err.status || 500;
-  const message = err.message || "Globle error hit something went wrrong";
-  res.status(statusCode).json({ success: false, statusCode, message });
+  const message = err.message || "Global error occurred";
+  res.status(statusCode).json({
+    success: false,
+    message,
+  });
 });
 
-//server Start
+/* START SERVER */
 const PORT = process.env.PORT || 3000;
-app.listen(PORT);
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
