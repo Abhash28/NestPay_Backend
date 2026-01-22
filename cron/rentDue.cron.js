@@ -6,6 +6,7 @@ const updateOverdueRent = require("../services/rentOverDue");
 cron.schedule(
   "* * * * *", // 12:01 AM IST
   generateRentDue,
+  console.log("due rent working"),
   { timezone: "Asia/Kolkata" },
 );
 
@@ -13,5 +14,6 @@ cron.schedule(
 cron.schedule(
   "* * * * *", // 12:05 AM IST
   updateOverdueRent,
+  console.log("overdue rent working"),
   { timezone: "Asia/Kolkata" },
 );
