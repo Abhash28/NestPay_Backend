@@ -50,7 +50,7 @@ const allocateUnitSchema = new mongoose.Schema(
       default: null,
     }, // "2026-01"
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 module.exports = mongoose.model("UnitAllocation", allocateUnitSchema);

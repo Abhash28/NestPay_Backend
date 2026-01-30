@@ -173,7 +173,7 @@ const recentPaid = async (req, res, next) => {
       .limit(3)
       .populate("tenantId", "tenantName")
       .populate("unitId", "unitName");
-    res.json({ recentPayment });
+    res.json({ success: true, message: "Recent Payment", recentPayment });
   } catch (error) {
     next(error);
   }
@@ -204,7 +204,9 @@ const paymentHistory = async (req, res, next) => {
       .populate("propertyId", "propertyName")
       .populate("unitId", "unitName")
       .sort({ createdAt: -1 });
-    res.status(200).json({ rentDue });
+    res
+      .status(200)
+      .json({ success: true, message: "Payment History", rentDue });
   } catch (error) {
     next(error);
   }
@@ -223,7 +225,11 @@ const recentPaidTenant = async (req, res, next) => {
       .populate("rentDueId", "month dueDate")
       .populate("tenantId", "tenantName")
       .populate("unitId", "unitName");
-    res.json({ recentPayment });
+    res.json({
+      success: true,
+      message: "Recent Payment in tenant side",
+      recentPayment,
+    });
   } catch (error) {
     next(error);
   }
@@ -237,7 +243,31 @@ const paidRent = async (req, res, next) => {
       tenantId: id,
       status: "SUCCESS",
     }).populate("rentDueId", "month dueDate");
-    res.json({ paymentHistory });
+    res.json({ success: true, message: "All Paid payment", paymentHistory });
+  } catch (error) {
+    next(error);
+  }
+};
+
+//show payment detail in admin and tenant both side
+const transactionDetail = async (req, res, next) => {
+  const { rentDueId } = req.params;
+
+  try {
+    const detail = await PaymentSchema.findOne({ rentDueId });
+
+    if (!detail) {
+      return res.status(404).json({
+        success: false,
+        message: "No transaction found for this rent",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Transaction Detail",
+      detail,
+    });
   } catch (error) {
     next(error);
   }
@@ -251,4 +281,5 @@ module.exports = {
   paymentHistory,
   recentPaidTenant,
   paidRent,
+  transactionDetail,
 };

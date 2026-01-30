@@ -8,6 +8,7 @@ const {
   paidRent,
   recentPaidTenant,
   paymentHistory,
+  transactionDetail,
 } = require("../controller/PaymentController");
 
 const paymentRouter = express.Router();
@@ -27,5 +28,12 @@ paymentRouter.get("/history", verifyAdmin, paymentHistory);
 paymentRouter.get("/recent/tenant/paid", verifyAdmin, recentPaidTenant);
 //this api is for paid payment history in tenant side
 paymentRouter.get("/tenant/history", verifyAdmin, paidRent);
+
+//payment detail
+paymentRouter.get(
+  "/transaction-detail/:rentDueId",
+  verifyAdmin,
+  transactionDetail,
+);
 
 module.exports = { paymentRouter };

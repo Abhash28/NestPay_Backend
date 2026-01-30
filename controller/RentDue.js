@@ -11,10 +11,12 @@ const getAllRentDue = async (req, res, next) => {
       adminId,
       month: currentMonth,
     })
-      .populate("tenantId")
+      .populate("tenantId", "tenantName tenantMobileNo")
       .populate("propertyId")
       .populate("unitId")
-      .sort({ createdAt: -1 });
+      .sort({
+        updatedAt: -1,
+      });
 
     res.json({
       count: rentDues.length,
@@ -29,7 +31,10 @@ const getAllRentDue = async (req, res, next) => {
 const tenantPendingRent = async (req, res, next) => {
   const { id } = req.tenant;
   try {
-    const allRent = await RentDueSchema.find({ tenantId: id });
+    const allRent = await RentDueSchema.find({ tenantId: id }).populate(
+      "tenantId",
+      "tenantName tenantMobileNo",
+    );
     res.json({ allRent });
   } catch (error) {
     next(error);

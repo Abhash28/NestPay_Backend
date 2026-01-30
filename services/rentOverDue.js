@@ -1,21 +1,25 @@
 const RentDue = require("../model/RentDueSchema");
 
 const updateOverdueRent = async () => {
-  const endOfYesterday = new Date();
-  endOfYesterday.setHours(0, 0, 0, 0);
-  endOfYesterday.setMilliseconds(-1); // 23:59:59.999 of yesterday
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const graceDays = 5;
+
+  const overdueCutoff = new Date(today);
+  overdueCutoff.setDate(overdueCutoff.getDate() - graceDays);
 
   const result = await RentDue.updateMany(
     {
       status: "Pending",
-      dueDate: { $lte: endOfYesterday },
+      dueDate: { $lt: overdueCutoff },
     },
     {
       $set: { status: "Overdue" },
     },
   );
 
-  console.log(`Marked ${result.modifiedCount} rent(s) as overdue`);
+  console.log(`Marked ${result.modifiedCount} rents as overdue`);
 };
 
 module.exports = updateOverdueRent;

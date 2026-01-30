@@ -1,66 +1,62 @@
 const AllocateUnit = require("../model/allocateUnitSchema.js");
-const rentDueSchema = require("../model/RentDueSchema.js");
+const RentDue = require("../model/RentDueSchema.js");
 
-// Helper: converts Date → "YYYY-MM"
 const formatMonth = (date) => date.toISOString().slice(0, 7);
 
 const generateRentDue = async () => {
   const today = new Date();
-  const currentMonth = formatMonth(today);
 
-  //  Find all ACTIVE allocations that already started
   const allocations = await AllocateUnit.find({
     status: "Active",
     startDate: { $lte: today },
   });
 
-  //  Process each allocation independently
   for (const alloc of allocations) {
-    //  STEP 1: Billing day check
-    // If today is before billing day → skip
-    if (today.getDate() < alloc.billingDay) continue;
+    // decide correct billing month
+    const billingMonthDate =
+      today.getDate() <= alloc.billingDay
+        ? new Date(today.getFullYear(), today.getMonth(), 1) //current month
+        : new Date(today.getFullYear(), today.getMonth() + 1, 1); //next month
 
-    //  STEP 2: Month-level duplicate protection
-    if (alloc.lastRentGeneratedMonth === currentMonth) continue;
+    const billingMonth = formatMonth(billingMonthDate);
 
-    //  STEP 3: Database-level duplicate protection
-    const alreadyExists = await rentDueSchema.findOne({
+    // skip if already generated
+    if (alloc.lastRentGeneratedMonth === billingMonth) continue;
+
+    const alreadyExists = await RentDue.findOne({
       allocationId: alloc._id,
-      month: currentMonth,
+      month: billingMonth,
     });
 
-    // If rent already exists, sync tracker & skip
     if (alreadyExists) {
-      alloc.lastRentGeneratedMonth = currentMonth;
+      alloc.lastRentGeneratedMonth = billingMonth;
       await alloc.save();
       continue;
     }
 
-    //  STEP 4: Create contractual due date
+    // create due date safely (future or today)
     const dueDate = new Date(
-      today.getFullYear(),
-      today.getMonth(),
+      billingMonthDate.getFullYear(),
+      billingMonthDate.getMonth(),
       alloc.billingDay,
       12,
       0,
       0,
     );
 
-    //  STEP 5: Create RentDue document
-    await rentDueSchema.create({
+    await RentDue.create({
       allocationId: alloc._id,
       adminId: alloc.adminId,
       propertyId: alloc.propertyId,
       unitId: alloc.unitId,
       tenantId: alloc.tenantId,
-      month: currentMonth,
+      month: billingMonth,
       dueDate,
       rentAmount: alloc.rentAmount,
       status: "Pending",
     });
 
-    // STEP 6: Update allocation tracker
-    alloc.lastRentGeneratedMonth = currentMonth;
+    alloc.lastRentGeneratedMonth = billingMonth;
     await alloc.save();
   }
 };
