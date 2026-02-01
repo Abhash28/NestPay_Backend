@@ -41,7 +41,6 @@ app.use("/api/allocation", allocatUnitRouter);
 app.use("/api/rentDue", rentDueRouter);
 app.use("/api/payment", paymentRouter);
 app.use("/api/admin", adminProfileRouter);
-console.log(process.env.RAZORPAY_KEY_ID);
 
 app.get("/", (req, res) => {
   res.send("NestPay Backend Running successfully 🚀");

@@ -16,7 +16,6 @@ const allocateUnit = async (req, res, next) => {
     // check unit
     const unit = await Units.findById(unitId);
     if (!unit) return next(createError(404, "Unit not found"));
-
     if (unit.status === "occupied") {
       return next(createError(400, "Unit already occupied"));
     }
@@ -24,20 +23,22 @@ const allocateUnit = async (req, res, next) => {
     // check tenant
     const tenant = await TenantSchema.findById(tenantId);
     if (!tenant) return next(createError(404, "Tenant not found"));
-
     if (tenant.status !== "Active") {
       return next(createError(400, "Tenant is inactive"));
     }
-
     if (tenant.unitId) {
       return next(createError(400, "Tenant already has a unit"));
     }
 
-    //Decide billing Date
-    let billingDay = new Date().getDate();
-    //normalize month date
+    // Decide billing date
+    const today = new Date();
+    let billingDay = today.getDate();
+    let startDate = new Date(today);
+
+    // normalize: if allocation happens on 28/29/30/31 → roll to next month’s 1st
     if (billingDay > 28) {
       billingDay = 1;
+      startDate = new Date(today.getFullYear(), today.getMonth() + 1, 1);
     }
 
     // update unit
@@ -57,7 +58,8 @@ const allocateUnit = async (req, res, next) => {
       tenantId,
       rentAmount: unit.monthlyRent,
       billingDay,
-      startDate: new Date(),
+      startDate,
+      status: "Active",
     });
 
     res.status(201).json({

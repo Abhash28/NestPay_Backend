@@ -35,7 +35,7 @@ const allocateUnitSchema = new mongoose.Schema(
       type: Number,
       required: true,
       min: 1,
-      max: 28,
+      max: 31,
     },
     startDate: {
       type: Date,

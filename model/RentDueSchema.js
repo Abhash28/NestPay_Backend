@@ -50,9 +50,11 @@ const RentDueSchema = new mongoose.Schema(
     },
     paidAt: Date,
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
+//Add index AFTER schema definition
+RentDueSchema.index({ allocationId: 1, month: 1 }, { unique: true });
 // SAFE EXPORT (prevents overwrite error)
 module.exports =
   mongoose.models.RentDue || mongoose.model("RentDue", RentDueSchema);
