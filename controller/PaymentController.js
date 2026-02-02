@@ -186,7 +186,12 @@ const paymentHistory = async (req, res, next) => {
 
     //read query params
     const { month, year, status } = req.query;
-    let filter = { adminId };
+    //  Current month (YYYY-MM)
+    const now = new Date();
+    const currentMonth = `${now.getFullYear()}-${String(
+      now.getMonth() + 1,
+    ).padStart(2, "0")}`;
+    let filter = { adminId, month: { $lt: currentMonth } };
 
     //  If month & year selected → add month filter
     if (month && year) {
