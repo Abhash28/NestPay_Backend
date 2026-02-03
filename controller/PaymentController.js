@@ -183,35 +183,42 @@ const recentPaid = async (req, res, next) => {
 const paymentHistory = async (req, res, next) => {
   try {
     const adminId = req.admin.id;
-
-    //read query params
     const { month, year, status } = req.query;
-    //  Current month (YYYY-MM)
+
     const now = new Date();
     const currentMonth = `${now.getFullYear()}-${String(
       now.getMonth() + 1,
     ).padStart(2, "0")}`;
-    let filter = { adminId, month: { $lt: currentMonth } };
 
-    //  If month & year selected → add month filter
+    let filter = { adminId };
+
+    // 🔹 Month logic
     if (month && year) {
-      // example: "01" + "2026" → "2026-01"
+      // Admin explicitly selected a month (ALLOW current month)
       filter.month = `${year}-${month}`;
+    } else {
+      // Default → previous months only
+      filter.month = { $lt: currentMonth };
     }
 
-    //  If status selected → add status filter
+    // 🔹 Status logic
     if (status) {
-      filter.status = status; // Paid / Pending
+      filter.status = status;
+    } else {
+      filter.status = "Paid";
     }
-    //fetch rent history
+
     const rentDue = await RentDueSchema.find(filter)
       .populate("tenantId", "tenantName")
       .populate("propertyId", "propertyName")
       .populate("unitId", "unitName")
-      .sort({ createdAt: -1 });
-    res
-      .status(200)
-      .json({ success: true, message: "Payment History", rentDue });
+      .sort({ month: -1, createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      message: "Payment History",
+      rentDue,
+    });
   } catch (error) {
     next(error);
   }

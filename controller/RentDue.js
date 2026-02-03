@@ -5,18 +5,25 @@ const getAllRentDue = async (req, res, next) => {
     const adminId = req.admin.id;
 
     const today = new Date();
-    const currentMonth = today.toISOString().slice(0, 7); // "YYYY-MM"
+    const currentMonth = today.toISOString().slice(0, 7); // YYYY-MM
 
     const rentDues = await RentDueSchema.find({
       adminId,
-      month: currentMonth,
+      $or: [
+        // Always show current month
+        { month: currentMonth },
+
+        //  Show ONLY unpaid previous months
+        {
+          month: { $lt: currentMonth },
+          status: { $in: ["pending", "overdue"] },
+        },
+      ],
     })
       .populate("tenantId", "tenantName tenantMobileNo")
       .populate("propertyId")
       .populate("unitId")
-      .sort({
-        updatedAt: -1,
-      });
+      .sort({ month: -1, updatedAt: -1 });
 
     res.json({
       count: rentDues.length,
