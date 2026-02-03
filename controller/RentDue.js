@@ -16,7 +16,7 @@ const getAllRentDue = async (req, res, next) => {
         //  Show ONLY unpaid previous months
         {
           month: { $lt: currentMonth },
-          status: { $in: ["pending", "overdue"] },
+          status: { $in: ["Pending", "Overdue"] },
         },
       ],
     })
