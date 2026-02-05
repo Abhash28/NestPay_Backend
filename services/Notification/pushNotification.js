@@ -1,6 +1,6 @@
 const admin = require("../../config/firebaseAdmin");
 
-const pushNotification = async (tokens, title, body,url) => {
+const pushNotification = async (tokens, title, body, url) => {
   if (!tokens || tokens.length === 0) return;
 
   const message = {
@@ -8,7 +8,7 @@ const pushNotification = async (tokens, title, body,url) => {
     data: {
       title,
       body,
-      url
+      url,
     },
   };
 

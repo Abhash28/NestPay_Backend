@@ -20,7 +20,11 @@ const notificationRouter = require("./routers/NotificationRouter");
 const razorpay = require("./config/razorpayConfig");
 
 //Or restrict to your frontend origin
-const allowedOrigins = ["https://nest-pay.in", "http://localhost:5173"];
+const allowedOrigins = [
+  "https://nest-pay.in",
+  "http://localhost:5173",
+  "http://localhost:5174",
+];
 
 app.use(
   cors({
