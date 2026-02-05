@@ -22,7 +22,10 @@ const sendRentDueNotifications = async () => {
     const title =
       due.status === "Overdue" ? "🚨 Rent Overdue" : "⏰ Rent Pending";
 
-    const body = `₹${due.rentAmount} rent for ${due.unitId.unitName} is ${due.status.toLowerCase()}.`;
+    const body =
+      due.status === "Overdue"
+        ? `🚨 Rent overdue: ₹${due.rentAmount} for ${due.unitId.unitName} is past the due date. Please pay immediately to avoid penalties.`
+        : `⏰ Rent reminder: ₹${due.rentAmount} for ${due.unitId.unitName} is due soon. Kindly complete the payment on time.`;
 
     await pushNotification(
       tokens.map((t) => t.token),
