@@ -28,6 +28,7 @@ const sendRentDueNotifications = async () => {
       tokens.map((t) => t.token),
       title,
       body,
+      "https://nest-pay.in",
     );
   }
 };

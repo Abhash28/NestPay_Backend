@@ -41,7 +41,15 @@ const paymentSchema = new mongoose.Schema(
     },
     method: {
       type: String,
-      enum: ["UPI", "CARD", "NETBANKING", "WALLET", "CASH"],
+      enum: ["upi", "card", "netbanking", "wallet", "CASH"],
+    },
+    // important for UPI history
+    vpa: {
+      type: String, // e.g. abhashsingh621@ybl
+    },
+    rrn: {
+      type: String, // UTR / bank reference number
+      index: true,
     },
     status: {
       type: String,

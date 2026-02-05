@@ -75,7 +75,7 @@ mongoose.connection.once("open", () => {
 });
 
 // ⏰ Every day at 9 AM
-cron.schedule("1 * * * *", async () => {
+cron.schedule("* * * * *", async () => {
   console.log("⏰ Running rent due notification cron");
   await sendRentDueNotifications();
 });
