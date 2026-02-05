@@ -95,11 +95,26 @@ const verifyPayment = async (req, res, next) => {
       return next(createError(400, "Invalid payment signature"));
     }
 
-    // Mark payment SUCCESS
+    // Fetch Razorpay payment info
+    const razorpayPayment = await razorpay.payments.fetch(razorpay_payment_id);
+    //must be captured
+    if (razorpayPayment.status !== "captured") {
+      payment.status = "FAILED";
+      payment.failureReason = `Payment status: ${razorpayPayment.status}`;
+      await payment.save();
+
+      return next(createError(400, "Payment not captured"));
+    }
+
+    //  save details
     payment.paymentId = razorpay_payment_id;
     payment.signature = razorpay_signature;
+    payment.method = razorpayPayment.method;
+    payment.vpa = razorpayPayment.vpa;
+    payment.rrn = razorpayPayment.acquirer_data?.rrn;
     payment.status = "SUCCESS";
     payment.paidAt = new Date();
+
     await payment.save();
 
     // Update Rent Due
