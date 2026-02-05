@@ -5,7 +5,7 @@ const pushNotification = async (tokens, title, body) => {
 
   const message = {
     tokens,
-    notification: {
+    data: {
       title,
       body,
     },
