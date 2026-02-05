@@ -3,6 +3,10 @@ const RentDueSchema = require("../model/RentDueSchema");
 const PaymentSchema = require("../model/PaymentSchema");
 const razorpay = require("../config/razorpayConfig");
 const createError = require("http-errors");
+const FcmToken = require("../model/FcmTokenSchema");
+const {
+  pushNotification,
+} = require("../services/Notification/pushNotification");
 
 // when user click on pay btn then backend create order for payement
 
@@ -124,6 +128,46 @@ const verifyPayment = async (req, res, next) => {
       paidAt: new Date(),
     });
 
+    //  Notify TENANT & ADMIN after 30 seconds (online payment)
+
+    setTimeout(async () => {
+      try {
+        // Tenant tokens
+        const tenantTokens = await FcmToken.find({
+          ownerType: "tenant",
+          ownerId: payment.tenantId,
+          isActive: true,
+        });
+
+        if (tenantTokens.length) {
+          pushNotification(
+            tenantTokens.map((t) => t.token),
+            "✅ Payment Successful",
+            `We received ₹${payment.amount} for your rent. Thank you for paying on time.`,
+            "https://nest-pay.in",
+          );
+        }
+
+        // Admin tokens
+        const adminTokens = await FcmToken.find({
+          ownerType: "admin",
+          ownerId: payment.adminId,
+          isActive: true,
+        });
+
+        if (adminTokens.length) {
+          pushNotification(
+            adminTokens.map((t) => t.token),
+            "💰 Rent Payment Received",
+            `₹${payment.amount} rent payment received successfully.`,
+            "https://nest-pay.in",
+          );
+        }
+      } catch (err) {
+        console.error("Delayed payment notification error:", err);
+      }
+    }, 30 * 1000); // ⏱️ 30 seconds
+
     res.json({
       success: true,
       message: "Payment verified successfully",
@@ -166,6 +210,23 @@ const markCashPayment = async (req, res, next) => {
     rentDue.paidAmount = rentDue.rentAmount;
     rentDue.paidAt = new Date();
     await rentDue.save();
+
+    // notify tenant to recived payment
+    // 🔔 Notify TENANT (all devices)
+    const tenantTokens = await FcmToken.find({
+      ownerType: "tenant",
+      ownerId: rentDue.tenantId,
+      isActive: true,
+    });
+
+    if (tenantTokens.length) {
+      pushNotification(
+        tenantTokens.map((t) => t.token),
+        "✅ Rent Payment Received",
+        `₹${rentDue.rentAmount} rent has been marked as paid by the admin.`,
+        "https://nest-pay.in",
+      ).catch(console.error);
+    }
 
     res.status(200).json({
       success: true,

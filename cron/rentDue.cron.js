@@ -16,7 +16,7 @@ function startCrons() {
   // ================= RENT GENERATION =================
   // Runs at 12:10 AM IST (SAFE TIME)
   cron.schedule(
-    "* * * * *",
+    "30 3 * * *",
     async () => {
       try {
         console.log(" [CRON] Running generateRentDue");
@@ -32,7 +32,7 @@ function startCrons() {
   // ================= OVERDUE MARKING =================
   // Runs at 12:15 AM IST
   cron.schedule(
-    "* * * * *",
+    "40 3 * * *",
     async () => {
       try {
         console.log(" [CRON] Running updateOverdueRent");
@@ -75,7 +75,7 @@ mongoose.connection.once("open", () => {
 });
 
 // ⏰ Every day at 9 AM
-cron.schedule("0 11,21 * * *", async () => {
+cron.schedule("0 9 * * *", async () => {
   console.log("⏰ Running rent due notification cron");
   await sendRentDueNotifications();
 });
