@@ -16,10 +16,11 @@ const app = express();
 app.use(express.json());
 
 //razor pay config
+const notificationRouter = require("./routers/NotificationRouter");
 const razorpay = require("./config/razorpayConfig");
 
 //Or restrict to your frontend origin
-const allowedOrigins = ["https://nest-pay.in", "http://localhost:5173"];
+const allowedOrigins = ["https://nest-pay.in", "http://localhost:5174"];
 
 app.use(
   cors({
@@ -41,6 +42,7 @@ app.use("/api/allocation", allocatUnitRouter);
 app.use("/api/rentDue", rentDueRouter);
 app.use("/api/payment", paymentRouter);
 app.use("/api/admin", adminProfileRouter);
+app.use("/api/notification", notificationRouter);
 app.use("/api/whatsapp", whatsappRouter);
 
 app.get("/", (req, res) => {

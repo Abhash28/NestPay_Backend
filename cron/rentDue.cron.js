@@ -1,6 +1,8 @@
 const cron = require("node-cron");
 const mongoose = require("mongoose");
-
+const {
+  sendRentDueNotifications,
+} = require("../services/Notification/rentdue.service");
 const generateRentDue = require("../services/generateRentDue");
 const updateOverdueRent = require("../services/rentOverDue");
 
@@ -70,4 +72,10 @@ mongoose.connection.once("open", () => {
 
   // Run recovery after 1 minute (server stabilization)
   setTimeout(recoveryRun, 60_000);
+});
+
+// ⏰ Every day at 9 AM
+cron.schedule("1 * * * *", async () => {
+  console.log("⏰ Running rent due notification cron");
+  await sendRentDueNotifications();
 });
