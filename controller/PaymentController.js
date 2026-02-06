@@ -248,7 +248,8 @@ const recentPaid = async (req, res, next) => {
       .sort({ createdAt: -1 }) // latest first
       .limit(3)
       .populate("tenantId", "tenantName")
-      .populate("unitId", "unitName");
+      .populate("unitId", "unitName")
+      .populate("rentDueId", "month");
     res.json({ success: true, message: "Recent Payment", recentPayment });
   } catch (error) {
     next(error);
