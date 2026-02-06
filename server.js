@@ -17,6 +17,7 @@ app.use(express.json());
 
 //razor pay config
 const notificationRouter = require("./routers/NotificationRouter");
+const automationRouter = require("./routers/AutomationRouter");
 const razorpay = require("./config/razorpayConfig");
 
 //Or restrict to your frontend origin
@@ -47,6 +48,7 @@ app.use("/api/rentDue", rentDueRouter);
 app.use("/api/payment", paymentRouter);
 app.use("/api/admin", adminProfileRouter);
 app.use("/api/notification", notificationRouter);
+app.use("/api/automation", automationRouter);
 app.use("/api/whatsapp", whatsappRouter);
 
 app.get("/", (req, res) => {
