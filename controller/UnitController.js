@@ -1,5 +1,6 @@
 const PropertiesSchema = require("../model/PropertiesSchema");
 const Units = require("../model/Units");
+const allocationUnitSchema = require("../model/allocateUnitSchema");
 const createError = require("http-errors"); // if you are using this
 
 //create new unit
@@ -46,6 +47,12 @@ const updateUnit = async (req, res, next) => {
     const update = await Units.findByIdAndUpdate(
       unitId,
       { unitName, monthlyRent },
+      { new: true },
+    );
+    //also update in allocation unit because rent generate on allocation if for unit rent =1700 then allocation also gave same but when update unit rent 1600 then not update allocation
+    await allocationUnitSchema.findOneAndUpdate(
+      { unitId: unitId },
+      { rentAmount: monthlyRent },
       { new: true },
     );
     res
