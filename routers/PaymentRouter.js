@@ -8,6 +8,7 @@ const {
   paidRent,
   recentPaidTenant,
   paymentHistory,
+  downloadPaymentPdf,
   transactionDetail,
 } = require("../controller/PaymentController");
 
@@ -23,6 +24,9 @@ paymentRouter.get("/recent-paid", verifyAdmin, recentPaid);
 
 //admin payment histroy
 paymentRouter.get("/history", verifyAdmin, paymentHistory);
+
+//make pdf for history
+paymentRouter.get("/pdf", verifyAdmin, downloadPaymentPdf);
 
 //recent payment for admin dashboard stats
 paymentRouter.get("/recent/tenant/paid", verifyAdmin, recentPaidTenant);

@@ -7,6 +7,7 @@ const FcmToken = require("../model/FcmTokenSchema");
 const {
   pushNotification,
 } = require("../services/Notification/pushNotification");
+const PDFDocument = require("pdfkit");
 
 // when user click on pay btn then backend create order for payement
 
@@ -180,7 +181,7 @@ const verifyPayment = async (req, res, next) => {
 //if admin mark cash then direct create order for cash
 const markCashPayment = async (req, res, next) => {
   try {
-    const { rentDueId } = req.body;
+    const { rentDueId, cashRemark } = req.body;
     const adminId = req.admin.id;
 
     const rentDue = await RentDueSchema.findById(rentDueId);
@@ -201,6 +202,7 @@ const markCashPayment = async (req, res, next) => {
       unitId: rentDue.unitId,
       amount: rentDue.rentAmount,
       method: "CASH",
+      cashRemark: cashRemark,
       status: "SUCCESS",
       paidAt: new Date(),
     });
@@ -281,8 +283,6 @@ const paymentHistory = async (req, res, next) => {
     // 🔹 Status logic
     if (status) {
       filter.status = status;
-    } else {
-      filter.status = "Paid";
     }
 
     const rentDue = await RentDueSchema.find(filter)
@@ -298,6 +298,177 @@ const paymentHistory = async (req, res, next) => {
     });
   } catch (error) {
     next(error);
+  }
+};
+
+//export pdf in history
+const downloadPaymentPdf = async (req, res) => {
+  try {
+    const adminId = req.admin.id;
+    const { month, year, status } = req.query;
+
+    /* ---------- FILTER ---------- */
+    const now = new Date();
+    const currentMonth = `${now.getFullYear()}-${String(
+      now.getMonth() + 1,
+    ).padStart(2, "0")}`;
+
+    let filter = { adminId };
+
+    if (month && year) {
+      filter.month = `${year}-${month}`;
+    } else {
+      filter.month = { $lt: currentMonth };
+    }
+
+    if (status) filter.status = status;
+
+    const rentDues = await RentDueSchema.find(filter)
+      .populate("tenantId", "tenantName")
+      .populate("propertyId", "propertyName")
+      .populate("unitId", "unitName")
+      .sort({ month: -1 });
+
+    /* ---------- DATA PREP ---------- */
+    const rows = [];
+
+    for (let r of rentDues) {
+      const payment = await PaymentSchema.findOne({
+        rentDueId: r._id,
+        status: "SUCCESS",
+      });
+
+      rows.push({
+        tenant: r.tenantId?.tenantName || "-",
+        propertyUnit: `${r.propertyId?.propertyName || "-"} / ${
+          r.unitId?.unitName || "-"
+        }`,
+        amount: `${r.rentAmount}`,
+        status: r.status,
+        method: payment?.method || "-",
+        rrn: payment?.rrn || "-",
+        dueDate: r.dueDate
+          ? new Date(r.dueDate).toLocaleDateString("en-IN")
+          : "-",
+        paidOn: payment?.paidAt
+          ? new Date(payment.paidAt).toLocaleDateString("en-IN")
+          : "-",
+      });
+    }
+
+    /* ---------- PDF ---------- */
+    const doc = new PDFDocument({ margin: 30, size: "A4" });
+    const chunks = [];
+
+    doc.on("data", (c) => chunks.push(c));
+    doc.on("end", () => {
+      const pdfBuffer = Buffer.concat(chunks);
+      res.json({
+        success: true,
+        file: pdfBuffer.toString("base64"),
+        fileName: "payment-history.pdf",
+      });
+    });
+
+    /* ---------- HEADER ---------- */
+    doc
+      .font("Helvetica-Bold")
+      .fontSize(20)
+      .text("PAYMENT HISTORY", { align: "center" });
+
+    doc.moveDown(0.5);
+
+    const monthLabel =
+      month && year
+        ? `${new Date(`${year}-${month}-01`).toLocaleString("en-IN", {
+            month: "long",
+          })} ${year}`
+        : "Previous Months";
+
+    doc
+      .font("Helvetica")
+      .fontSize(11)
+      .text(`Month : ${monthLabel}`, { align: "center" });
+
+    doc
+      .fontSize(9)
+      .fillColor("gray")
+      .text(`Generated on : ${new Date().toLocaleDateString("en-IN")}`, {
+        align: "center",
+      });
+
+    doc.moveDown(1.5);
+    doc.fillColor("black");
+
+    /* ---------- TABLE ---------- */
+    const columns = [
+      { label: "Tenant", width: 90 },
+      { label: "Property / Unit", width: 110 },
+      { label: "Amount", width: 47 },
+      { label: "Status", width: 50 },
+      { label: "Method", width: 47 },
+      { label: "RRN", width: 80 },
+      { label: "Due Date", width: 52 },
+      { label: "Paid On", width: 52 },
+    ];
+
+    const rowHeight = 30;
+    let y = doc.y;
+    const xStart = doc.page.margins.left;
+
+    /* ---------- TABLE HEADER ---------- */
+    doc.font("Helvetica-Bold").fontSize(9);
+    let x = xStart;
+
+    columns.forEach((c) => {
+      doc.rect(x, y, c.width, rowHeight).fillAndStroke("#F1F5F9", "#CBD5E1");
+      doc.fillColor("black").text(c.label, x + 5, y + 6, {
+        width: c.width - 10,
+      });
+      x += c.width;
+    });
+
+    y += rowHeight;
+    doc.font("Helvetica").fontSize(9);
+
+    /* ---------- ROWS ---------- */
+    rows.forEach((r) => {
+      if (y + rowHeight > doc.page.height - 40) {
+        doc.addPage();
+        y = doc.page.margins.top;
+      }
+
+      const data = [
+        r.tenant,
+        r.propertyUnit,
+        r.amount,
+        r.status,
+        r.method,
+        r.rrn,
+        r.dueDate,
+        r.paidOn,
+      ];
+
+      let xRow = xStart;
+
+      data.forEach((cell, i) => {
+        doc.rect(xRow, y, columns[i].width, rowHeight).stroke();
+        doc.text(String(cell), xRow + 5, y + 6, {
+          width: columns[i].width - 10,
+        });
+        xRow += columns[i].width;
+      });
+
+      y += rowHeight;
+    });
+
+    doc.end();
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      success: false,
+      message: "PDF generation failed",
+    });
   }
 };
 
@@ -368,6 +539,7 @@ module.exports = {
   markCashPayment,
   recentPaid,
   paymentHistory,
+  downloadPaymentPdf,
   recentPaidTenant,
   paidRent,
   transactionDetail,

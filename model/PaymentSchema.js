@@ -43,6 +43,11 @@ const paymentSchema = new mongoose.Schema(
       type: String,
       enum: ["upi", "card", "netbanking", "wallet", "CASH"],
     },
+    //if cash remark
+    cashRemark: {
+      type: String,
+      default: "Collected By Cash",
+    },
     // important for UPI history
     vpa: {
       type: String, // e.g. abhashsingh621@ybl

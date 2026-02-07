@@ -8,10 +8,11 @@ const {
  * - Supports multiple devices per user
  * - Prevents duplicate tokens
  * - Reactivates token on re-login
+ * - SAFE for multi-device & re-login
  */
 const saveFcmToken = async (req, res, next) => {
   try {
-    const { token, deviceType = "web" } = req.body;
+    const { token } = req.body;
 
     if (!token) {
       return res.status(400).json({ message: "FCM token is required" });
@@ -31,13 +32,19 @@ const saveFcmToken = async (req, res, next) => {
     }
 
     /**
-     * STEP 1: If this token exists for any user, deactivate it
-     * (prevents token reuse bugs)
+     * STEP 1: Deactivate this token ONLY if used by another user
+     * (prevents accidental self-deactivation)
      */
-    await FcmToken.updateMany({ token }, { isActive: false });
+    await FcmToken.updateMany(
+      {
+        token,
+        ownerId: { $ne: ownerId },
+      },
+      { isActive: false },
+    );
 
     /**
-     * STEP 2: Upsert token for this user & device
+     * STEP 2: Upsert token for this user
      */
     await FcmToken.findOneAndUpdate(
       { ownerId, ownerType, token },
@@ -46,14 +53,13 @@ const saveFcmToken = async (req, res, next) => {
         ownerType,
         token,
         isActive: true,
-        lastUsedAt: new Date(),
       },
       { upsert: true, new: true },
     );
 
     /**
-     * STEP 3: Optional welcome notification
-     * (safe because data-only payload)
+     * STEP 3: Optional welcome notification (data-only)
+     * NOTE: Not guaranteed if browser is closed
      */
     setTimeout(() => {
       pushNotification(
@@ -66,7 +72,7 @@ const saveFcmToken = async (req, res, next) => {
       ).catch(console.error);
     }, 90 * 1000);
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: "FCM token saved successfully",
     });
