@@ -46,7 +46,6 @@ const paymentSchema = new mongoose.Schema(
     //if cash remark
     cashRemark: {
       type: String,
-      default: "Collected By Cash",
     },
     // important for UPI history
     vpa: {
