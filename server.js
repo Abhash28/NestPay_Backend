@@ -11,7 +11,7 @@ const { rentDueRouter } = require("./routers/RentdueRouter");
 const { paymentRouter } = require("./routers/PaymentRouter");
 const { UnitRouter } = require("./routers/UnitRouter");
 const { adminProfileRouter } = require("./routers/AdminProfileRouter");
-const whatsappRouter = require("./routers/whatsappRouter");
+
 const app = express();
 app.use(express.json());
 
@@ -49,7 +49,6 @@ app.use("/api/payment", paymentRouter);
 app.use("/api/admin", adminProfileRouter);
 app.use("/api/notification", notificationRouter);
 app.use("/api/automation", automationRouter);
-app.use("/api/whatsapp", whatsappRouter);
 
 app.get("/", (req, res) => {
   res.send("NestPay Backend Running successfully 🚀");

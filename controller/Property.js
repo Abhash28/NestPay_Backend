@@ -130,19 +130,21 @@ const dashboardStats = async (req, res, next) => {
     const adminId = req.admin.id;
 
     // run all queries together (fast)
-    const [totalProperty, totalUnit, totalActiveTenant] = await Promise.all([
-      // total properties
-      PropertiesSchema.countDocuments({ createdBy: adminId }),
+    const [totalProperty, totalUnit, totalActiveTenant, paidRentDues] =
+      await Promise.all([
+        // total properties
+        PropertiesSchema.countDocuments({ createdBy: adminId }),
 
-      // total units
-      unitSchema.countDocuments({ adminId: adminId }),
+        // total units
+        unitSchema.countDocuments({ adminId: adminId }),
 
-      // total active tenants
-      TenantSchema.countDocuments({
-        createdBy: adminId,
-        status: "Active",
-      }),
-    ]);
+        // total active tenants
+        TenantSchema.countDocuments({
+          createdBy: adminId,
+          status: "Active",
+        }),
+        rentDueSchema.find({ adminId: adminId, status: "Paid" }),
+      ]);
 
     res.status(200).json({
       success: true,

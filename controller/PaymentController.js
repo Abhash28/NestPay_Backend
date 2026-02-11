@@ -8,6 +8,7 @@ const {
   pushNotification,
 } = require("../services/Notification/pushNotification");
 const PDFDocument = require("pdfkit");
+const { sendWhatsapp } = require("../services/Whatsapp/whatsappService");
 
 // when user click on pay btn then backend create order for payement
 
@@ -169,6 +170,37 @@ const verifyPayment = async (req, res, next) => {
       }
     }, 30 * 1000); // ⏱️ 30 seconds
 
+    //whatsapp messagae while online payment confirmation
+    //  Fetch RentDue with tenant details
+    const rentDue = await RentDueSchema.findById(payment.rentDueId).populate(
+      "tenantId",
+      "tenantName tenantMobileNo",
+    );
+
+    if (!rentDue) {
+      return next(createError(404, "Rent due not found"));
+    }
+
+    const paidDate = payment.paidAt.toLocaleDateString("en-GB");
+    const month = new Date(rentDue.dueDate).toLocaleString("en-IN", {
+      month: "short",
+      year: "numeric",
+    });
+    // adjust if different field
+
+    //  Send WhatsApp
+    await sendWhatsapp({
+      phone: rentDue.tenantId.tenantMobileNo,
+      templateId: "04794253-97bb-40f3-9612-9148f4b9db27",
+      params: [
+        rentDue.tenantId.tenantName,
+        month,
+        String(payment.amount),
+        payment.method.toUpperCase(),
+        paidDate,
+      ],
+    });
+
     res.json({
       success: true,
       message: "Payment verified successfully",
@@ -184,7 +216,11 @@ const markCashPayment = async (req, res, next) => {
     const { rentDueId, cashRemark } = req.body;
     const adminId = req.admin.id;
 
-    const rentDue = await RentDueSchema.findById(rentDueId);
+    const rentDue = await RentDueSchema.findById(rentDueId).populate(
+      "tenantId",
+      "tenantName tenantMobileNo",
+    );
+
     if (!rentDue) {
       return res.status(404).json({ message: "Rent due not found" });
     }
@@ -193,31 +229,51 @@ const markCashPayment = async (req, res, next) => {
       return res.status(400).json({ message: "Rent already paid" });
     }
 
-    // create payment record
-    await PaymentSchema.create({
-      adminId,
+    const now = new Date();
+
+    let payment = await PaymentSchema.findOne({
       rentDueId,
-      tenantId: rentDue.tenantId,
-      propertyId: rentDue.propertyId,
-      unitId: rentDue.unitId,
-      amount: rentDue.rentAmount,
-      method: "CASH",
-      cashRemark: cashRemark,
-      status: "SUCCESS",
-      paidAt: new Date(),
+      adminId,
     });
 
-    // update rent due
+    if (payment) {
+      payment.method = "CASH";
+      payment.cashRemark = cashRemark;
+      payment.status = "SUCCESS";
+      payment.paidAt = now;
+      payment.amount = rentDue.rentAmount;
+      await payment.save();
+    } else {
+      payment = await PaymentSchema.create({
+        adminId,
+        rentDueId,
+        tenantId: rentDue.tenantId._id,
+        propertyId: rentDue.propertyId,
+        unitId: rentDue.unitId,
+        amount: rentDue.rentAmount,
+        method: "CASH",
+        cashRemark,
+        status: "SUCCESS",
+        paidAt: now,
+      });
+    }
+
     rentDue.status = "Paid";
     rentDue.paidAmount = rentDue.rentAmount;
-    rentDue.paidAt = new Date();
+    rentDue.paidAt = now;
     await rentDue.save();
 
-    // notify tenant to recived payment
-    // 🔔 Notify TENANT (all devices)
+    const paidDate = now.toLocaleDateString("en-GB");
+    const month = new Date(rentDue.dueDate).toLocaleString("en-IN", {
+      month: "short",
+      year: "numeric",
+    });
+    // adjust to your schema
+
+    // 🔔 FCM
     const tenantTokens = await FcmToken.find({
       ownerType: "tenant",
-      ownerId: rentDue.tenantId,
+      ownerId: rentDue.tenantId._id,
       isActive: true,
     });
 
@@ -225,10 +281,23 @@ const markCashPayment = async (req, res, next) => {
       pushNotification(
         tenantTokens.map((t) => t.token),
         "✅ Rent Payment Received",
-        `₹${rentDue.rentAmount} rent has been marked as paid by the admin.`,
+        `₹${rentDue.rentAmount} rent has been received in cash.`,
         "https://nest-pay.in",
       ).catch(console.error);
     }
+
+    // 📲 WhatsApp
+    await sendWhatsapp({
+      phone: rentDue.tenantId.tenantMobileNo,
+      templateId: "04794253-97bb-40f3-9612-9148f4b9db27",
+      params: [
+        rentDue.tenantId.tenantName,
+        month,
+        String(payment.amount),
+        payment.method,
+        paidDate,
+      ],
+    });
 
     res.status(200).json({
       success: true,
