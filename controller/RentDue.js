@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const RentDueSchema = require("../model/RentDueSchema");
 const PaymentSchema = require("../model/PaymentSchema");
 
@@ -50,53 +51,62 @@ const tenantPendingRent = async (req, res, next) => {
 };
 
 // total collection this month
+
 const totalCollection = async (req, res, next) => {
   try {
-    const adminId = req.admin.id;
+    const adminId = new mongoose.Types.ObjectId(req.admin.id);
 
     const now = new Date();
 
-    //start of this month (01/02/2026)
     const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    //start of next month (01/03/2026)
     const startOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-    // start of last month (01/01/2026)
     const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
 
-    // THIS MONTH
-    const thisMonthPayments = await PaymentSchema.find({
-      adminId,
-      status: "SUCCESS",
-      paidAt: {
-        $gte: startOfThisMonth,
-        $lt: startOfNextMonth,
+    const thisMonthTotal = await PaymentSchema.aggregate([
+      {
+        $match: {
+          adminId: adminId,
+          status: "SUCCESS",
+          paidAt: {
+            $gte: startOfThisMonth,
+            $lt: startOfNextMonth,
+          },
+        },
       },
-    })
-      .populate("tenantId propertyId unitId")
-      .sort({ paidAt: -1 });
+      {
+        $group: {
+          _id: null,
+          totalAmount: { $sum: "$amount" },
+        },
+      },
+    ]);
 
-    // LAST MONTH
-    const lastMonthPayments = await PaymentSchema.find({
-      adminId,
-      status: "SUCCESS",
-      paidAt: {
-        $gte: startOfLastMonth,
-        $lt: startOfThisMonth,
+    const lastMonthTotal = await PaymentSchema.aggregate([
+      {
+        $match: {
+          adminId: adminId,
+          status: "SUCCESS",
+          paidAt: {
+            $gte: startOfLastMonth,
+            $lt: startOfThisMonth,
+          },
+        },
       },
-    })
-      .populate("tenantId propertyId unitId")
-      .sort({ paidAt: -1 });
+      {
+        $group: {
+          _id: null,
+          totalAmount: { $sum: "$amount" },
+        },
+      },
+    ]);
+
+    const thisMonthSum = thisMonthTotal[0]?.totalAmount || 0;
+    const lastMonthSum = lastMonthTotal[0]?.totalAmount || 0;
 
     res.status(200).json({
       success: true,
-      thisMonth: {
-        count: thisMonthPayments.length,
-        payments: thisMonthPayments,
-      },
-      lastMonth: {
-        count: lastMonthPayments.length,
-        payments: lastMonthPayments,
-      },
+      thisMonthSum,
+      lastMonthSum,
     });
   } catch (error) {
     next(error);

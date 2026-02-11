@@ -81,6 +81,6 @@ cron.schedule("0 9 * * *", async () => {
 });
 
 // ⏰ Every day at 4 mM
-cron.schedule("* * * * *", async () => {
+cron.schedule("1 * * * *", async () => {
   console.log("⏰ Running rent due notification cron");
 });
