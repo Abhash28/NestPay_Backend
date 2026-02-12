@@ -16,7 +16,7 @@ function startCrons() {
   // ================= RENT GENERATION =================
   // Runs at 12:10 AM IST (SAFE TIME)
   cron.schedule(
-    "1 * * * *",
+    "20 0 * * *",
     async () => {
       try {
         console.log(" [CRON] Running generateRentDue");
@@ -32,7 +32,7 @@ function startCrons() {
   // ================= OVERDUE MARKING =================
   // Runs at 12:15 AM IST
   cron.schedule(
-    "* * * * *",
+    "30 0 * * *",
     async () => {
       try {
         console.log(" [CRON] Running updateOverdueRent");
@@ -81,7 +81,7 @@ cron.schedule("0 9 * * *", async () => {
 });
 
 // ⏰ Every day at 4 AM
-cron.schedule("1 * * * *", async () => {
+cron.schedule("15 9 * * *", async () => {
   console.log("⏰ Running rent due whatsapp notification ");
   await RentdueWhatsapp();
 });
