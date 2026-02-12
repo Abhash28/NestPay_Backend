@@ -5,7 +5,7 @@ const {
 } = require("../services/Notification/rentdue.service");
 const generateRentDue = require("../services/generateRentDue");
 const updateOverdueRent = require("../services/rentOverDue");
-
+const { RentdueWhatsapp } = require("../services/Whatsapp/rentdueWhatsapp");
 /**
  * ================= START CRONS =================
  * Start ONLY after DB is connected
@@ -16,7 +16,7 @@ function startCrons() {
   // ================= RENT GENERATION =================
   // Runs at 12:10 AM IST (SAFE TIME)
   cron.schedule(
-    "* * * * *",
+    "1 * * * *",
     async () => {
       try {
         console.log(" [CRON] Running generateRentDue");
@@ -80,7 +80,8 @@ cron.schedule("0 9 * * *", async () => {
   await sendRentDueNotifications();
 });
 
-// ⏰ Every day at 4 mM
+// ⏰ Every day at 4 AM
 cron.schedule("1 * * * *", async () => {
-  console.log("⏰ Running rent due notification cron");
+  console.log("⏰ Running rent due whatsapp notification ");
+  await RentdueWhatsapp();
 });
