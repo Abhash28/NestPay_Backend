@@ -24,7 +24,7 @@ const RentdueWhatsapp = async () => {
 
     await sendWhatsapp({
       phone: rentDue.tenantId.tenantMobileNo,
-      templateId: "b06f8dcf-738f-406c-975f-57b115db00ea",
+      templateId: "7244d898-0f44-4b6f-a0fd-2b0dec13c71e",
       params: [
         rentDue.tenantId.tenantName,
         month,

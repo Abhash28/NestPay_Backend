@@ -320,7 +320,8 @@ const recentPaid = async (req, res, next) => {
       .limit(3)
       .populate("tenantId", "tenantName")
       .populate("unitId", "unitName")
-      .populate("rentDueId", "month");
+      .populate("rentDueId", "month")
+      .lean();
     res.json({ success: true, message: "Recent Payment", recentPayment });
   } catch (error) {
     next(error);
@@ -358,7 +359,8 @@ const paymentHistory = async (req, res, next) => {
       .populate("tenantId", "tenantName")
       .populate("propertyId", "propertyName")
       .populate("unitId", "unitName")
-      .sort({ month: -1, createdAt: -1 });
+      .sort({ month: -1, createdAt: -1 })
+      .lean();
 
     res.status(200).json({
       success: true,
@@ -405,7 +407,7 @@ const downloadPaymentPdf = async (req, res) => {
       const payment = await PaymentSchema.findOne({
         rentDueId: r._id,
         status: "SUCCESS",
-      });
+      }).lean();
 
       rows.push({
         tenant: r.tenantId?.tenantName || "-",
@@ -553,7 +555,8 @@ const recentPaidTenant = async (req, res, next) => {
       .limit(2)
       .populate("rentDueId", "month dueDate")
       .populate("tenantId", "tenantName")
-      .populate("unitId", "unitName");
+      .populate("unitId", "unitName")
+      .lean();
     res.json({
       success: true,
       message: "Recent Payment in tenant side",
@@ -571,7 +574,9 @@ const paidRent = async (req, res, next) => {
     const paymentHistory = await PaymentSchema.find({
       tenantId: id,
       status: "SUCCESS",
-    }).populate("rentDueId", "month dueDate");
+    })
+      .populate("rentDueId", "month dueDate")
+      .lean();
     res.json({ success: true, message: "All Paid payment", paymentHistory });
   } catch (error) {
     next(error);
@@ -583,7 +588,7 @@ const transactionDetail = async (req, res, next) => {
   const { rentDueId } = req.params;
 
   try {
-    const detail = await PaymentSchema.findOne({ rentDueId });
+    const detail = await PaymentSchema.findOne({ rentDueId }).lean();
 
     if (!detail) {
       return res.status(404).json({
